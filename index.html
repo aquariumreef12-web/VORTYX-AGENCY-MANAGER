@@ -288,5 +288,128 @@ function escapeHTML(value){
  })[c]);
 }
 </script>
+  
+<!-- VORTYX SUPABASE AUTHENTICATION -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://ujtqbksmdzgllhxrznrc.supabase.co";
+const SUPABASE_KEY = "INTRODU_AICI_CHEIA_SB_PUBLISHABLE";
+
+const vxSupabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+async function vxLogin(email, password) {
+  const { data, error } = await vxSupabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("Autentificare eșuată: " + error.message);
+    return;
+  }
+
+  const { data: profile, error: profileError } = await vxSupabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", data.user.id)
+    .single();
+
+  if (profileError || !profile) {
+    alert("Contul nu are un rol configurat. Contactează administratorul.");
+    await vxSupabase.auth.signOut();
+    return;
+  }
+
+  if (!["admin", "manager"].includes(profile.role)) {
+    alert("Rol neautorizat.");
+    await vxSupabase.auth.signOut();
+    return;
+  }
+
+  localStorage.setItem("vortyx_role", profile.role);
+  document.getElementById("vx-login").style.display = "none";
+  document.getElementById("vx-app").style.display = "block";
+
+  document.getElementById("vx-user-role").textContent =
+    profile.role === "admin" ? "ADMINISTRATOR" : "MANAGER";
+}
+
+async function vxLogout() {
+  await vxSupabase.auth.signOut();
+  localStorage.removeItem("vortyx_role");
+  location.reload();
+}
+
+async function vxCheckSession() {
+  const { data } = await vxSupabase.auth.getSession();
+
+  if (data.session) {
+    const { data: profile } = await vxSupabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", data.session.user.id)
+      .single();
+
+    if (profile && ["admin", "manager"].includes(profile.role)) {
+      document.getElementById("vx-login").style.display = "none";
+      document.getElementById("vx-app").style.display = "block";
+      document.getElementById("vx-user-role").textContent =
+        profile.role.toUpperCase();
+      return;
+    }
+
+    await vxSupabase.auth.signOut();
+  }
+
+  document.getElementById("vx-login").style.display = "block";
+  document.getElementById("vx-app").style.display = "none";
+}
+
+</script>
+
+<div id="vx-login" style="
+display:none;position:fixed;inset:0;background:#090811;
+z-index:9999;align-items:center;justify-content:center;
+flex-direction:column;color:white;font-family:Arial;padding:20px">
+
+  <h1 style="color:#b66aff;letter-spacing:3px">VORTYX AGENCY</h1>
+  <h3>MANAGER LOGIN</h3>
+
+  <input id="vx-email" type="email" placeholder="Email"
+    style="padding:14px;width:100%;max-width:320px;margin:8px">
+
+  <input id="vx-password" type="password" placeholder="Parolă"
+    style="padding:14px;width:100%;max-width:320px;margin:8px">
+
+  <button onclick="vxLogin(
+    document.getElementById('vx-email').value,
+    document.getElementById('vx-password').value
+  )" style="
+  background:#852cff;color:white;border:0;padding:14px 30px;
+  border-radius:8px;margin-top:12px;cursor:pointer">
+    INTRĂ ÎN APLICAȚIE
+  </button>
+</div>
+
+<div id="vx-app" style="display:none">
+  <div style="
+  position:fixed;bottom:10px;right:10px;background:#20132e;
+  color:white;padding:12px;border-radius:8px;z-index:999">
+    <span id="vx-user-role"></span>
+    <button onclick="vxLogout()" style="margin-left:10px">
+      Ieșire
+    </button>
+  </div>
+</div>
+
+<script>
+vxCheckSession();
+</script>
+<!-- END VORTYX AUTHENTICATION -->
+
 </body>
 </html>
