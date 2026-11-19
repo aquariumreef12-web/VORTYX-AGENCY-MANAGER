@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTYX AGENCY Manager</title>
+<style>
+:root {
+  --bg:#090811;
+  --panel:#151222;
+  --purple:#852cff;
+  --neon:#b66aff;
+  --text:#f5efff;
+  --muted:#9c93ae;
+  --border:#302344;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;background:var(--bg);color:var(--text);
+ font-family:Arial,sans-serif;
+}
+header{
+ padding:20px 24px;background:#100c1b;
+ border-bottom:1px solid var(--border);
+ display:flex;justify-content:space-between;align-items:center;
+}
+.logo{font-size:23px;font-weight:900;letter-spacing:3px;color:#c18aff}
+.logo span{color:white}
+.status{color:#6effb0;font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 70px)}
+nav{
+ width:225px;padding:20px 12px;
+ background:#100d19;border-right:1px solid var(--border);
+}
+nav button{
+ width:100%;padding:14px;margin:4px 0;
+ background:transparent;border:0;border-radius:9px;
+ color:#c5bad5;text-align:left;cursor:pointer;font-size:14px;
+}
+nav button:hover,nav button.active{
+ background:#392052;color:white;
+}
+main{padding:26px;width:100%;max-width:1400px;margin:auto}
+h1{font-size:25px;margin-top:0}
+.subtitle{color:var(--muted);font-size:13px}
+.cards{
+ display:grid;grid-template-columns:repeat(4,1fr);
+ gap:15px;margin:25px 0;
+}
+.card{
+ background:var(--panel);border:1px solid var(--border);
+ border-radius:13px;padding:20px;
+}
+.card small{color:var(--muted)}
+.number{font-size:30px;font-weight:bold;margin-top:12px;color:#c18aff}
+.section{
+ background:var(--panel);border:1px solid var(--border);
+ border-radius:13px;padding:20px;margin-top:18px;
+}
+.section h2{font-size:17px;margin-top:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:13px 9px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:#b995e7}
+input,select{
+ background:#0e0b17;border:1px solid var(--border);
+ border-radius:7px;padding:11px;color:white;width:100%;
+ margin:6px 0 13px;
+}
+.btn{
+ background:var(--purple);color:white;border:0;
+ padding:11px 17px;border-radius:8px;cursor:pointer;
+ font-weight:bold;
+}
+.btn:hover{background:#a04dff}
+.page{display:none}
+.page.active{display:block}
+.tag{color:#70f4ad}
+.empty{color:var(--muted);padding:15px 0}
+footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
+@media(max-width:750px){
+ .layout{display:block}
+ nav{width:100%;display:flex;overflow-x:auto;padding:8px}
+ nav button{min-width:max-content;width:auto}
+ main{padding:17px}
+ .cards{grid-template-columns:repeat(2,1fr)}
+ header{padding:16px}
+}
+@media(max-width:380px){
+ .cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="logo">VORTYX <span>AGENCY</span></div>
+ <div class="status">● SYSTEM ONLINE</div>
+</header>
+
+<div class="layout">
+<nav>
+ <button class="active" onclick="showPage('dashboard',this)">⌂ Dashboard</button>
+ <button onclick="showPage('creators',this)">♙ Creatori</button>
+ <button onclick="showPage('matches',this)">⚔ Match-uri LIVE</button>
+ <button onclick="showPage('managers',this)">♧ Manageri</button>
+ <button onclick="showPage('statistics',this)">▥ Statistici</button>
+ <button onclick="showPage('telegram',this)">✉ Telegram BOT</button>
+ <button onclick="showPage('settings',this)">⚙ Setări</button>
+</nav>
+
+<main>
+
+<section id="dashboard" class="page active">
+ <h1>Dashboard</h1>
+ <div class="subtitle">Centrul de control VORTYX AGENCY</div>
+ <div class="cards">
+  <div class="card"><small>Total creatori</small><div class="number" id="creatorCount">0</div></div>
+  <div class="card"><small>Manageri</small><div class="number" id="managerCount">0</div></div>
+  <div class="card"><small>Match-uri programate</small><div class="number" id="matchCount">0</div></div>
+  <div class="card"><small>Status sistem</small><div class="number" style="font-size:20px">ONLINE</div></div>
+ </div>
+ <div class="section">
+  <h2>Activitate recentă</h2>
+  <p class="empty">Nu există încă activitate înregistrată.</p>
+ </div>
+</section>
+
+<section id="creators" class="page">
+ <h1>Creatori</h1>
+ <p class="subtitle">Administrarea creatorilor VORTYX</p>
+ <div class="section">
+  <h2>Adaugă creator</h2>
+  <input id="creatorName" placeholder="Nume creator">
+  <input id="creatorTikTok" placeholder="Username TikTok">
+  <select id="creatorCountry">
+   <option value="România">România</option>
+   <option value="Germania">Germania</option>
+  </select>
+  <button class="btn" onclick="addCreator()">Adaugă creator</button>
+ </div>
+ <div class="section">
+  <h2>Lista creatorilor</h2>
+  <table><thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th></tr></thead>
+  <tbody id="creatorTable"></tbody></table>
+ </div>
+</section>
+
+<section id="matches" class="page">
+ <h1>Match-uri LIVE</h1>
+ <p class="subtitle">Programare și urmărire meciuri</p>
+ <div class="section">
+  <h2>Programează un match</h2>
+  <input id="matchCreator" placeholder="Creator VORTYX">
+  <input id="matchOpponent" placeholder="Adversar">
+  <input id="matchDate" type="datetime-local">
+  <select id="matchStatus">
+   <option>Propus</option>
+   <option>Confirmat</option>
+   <option>Programat</option>
+   <option>Finalizat</option>
+   <option>Anulat</option>
+  </select>
+  <button class="btn" onclick="addMatch()">Salvează match</button>
+ </div>
+ <div class="section">
+  <h2>Calendar match-uri</h2>
+  <table><thead><tr><th>Creator</th><th>Adversar</th><th>Data</th><th>Status</th></tr></thead>
+  <tbody id="matchTable"></tbody></table>
+ </div>
+</section>
+
+<section id="managers" class="page">
+ <h1>Manageri</h1>
+ <p class="subtitle">Echipa de administrare VORTYX</p>
+ <div class="section">
+  <h2>Adaugă manager</h2>
+  <input id="managerName" placeholder="Nume manager">
+  <input id="managerEmail" type="email" placeholder="Email manager">
+  <button class="btn" onclick="addManager()">Adaugă manager</button>
+ </div>
+ <div class="section">
+  <h2>Lista managerilor</h2>
+  <table><thead><tr><th>Nume</th><th>Email</th></tr></thead>
+  <tbody id="managerTable"></tbody></table>
+ </div>
+</section>
+
+<section id="statistics" class="page">
+ <h1>Statistici</h1>
+ <p class="subtitle">Situația activității agenției</p>
+ <div class="cards">
+  <div class="card"><small>Creatori înregistrați</small><div class="number" id="statCreators">0</div></div>
+  <div class="card"><small>Manageri înregistrați</small><div class="number" id="statManagers">0</div></div>
+  <div class="card"><small>Match-uri totale</small><div class="number" id="statMatches">0</div></div>
+  <div class="card"><small>Match-uri confirmate</small><div class="number" id="statConfirmed">0</div></div>
+ </div>
+</section>
+
+<section id="telegram" class="page">
+ <h1>Telegram BOT</h1>
+ <p class="subtitle">Conectarea botului VORTYX la aplicația managerilor</p>
+ <div class="section">
+  <h2>Conexiune webhook</h2>
+  <p>Status: <span class="tag">În așteptarea conectării</span></p>
+  <p class="empty">Vom conecta aici webhook-ul Cloudflare deja configurat și botul Telegram.</p>
+ </div>
+</section>
+
+<section id="settings" class="page">
+ <h1>Setări</h1>
+ <div class="section">
+  <h2>VORTYX AGENCY Manager</h2>
+  <p>Versiune: 1.0</p>
+  <p>Interfață: Black / Neon Purple</p>
+  <p>Platformă: Web / Mobile</p>
+  <p class="tag">Mod interfață demonstrativă</p>
+ </div>
+</section>
+
+</main>
+</div>
+
+<footer>VORTYX AGENCY MANAGER © 2026</footer>
+
+<script>
+const creators=[];
+const managers=[];
+const matches=[];
+
+function showPage(id,button){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ button.classList.add('active');
+}
+
+function addCreator(){
+ const name=document.getElementById('creatorName').value.trim();
+ const tiktok=document.getElementById('creatorTikTok').value.trim();
+ const country=document.getElementById('creatorCountry').value;
+ if(!name||!tiktok)return alert('Completează numele și username-ul.');
+ creators.push({name,tiktok,country});
+ document.getElementById('creatorName').value='';
+ document.getElementById('creatorTikTok').value='';
+ render();
+}
+
+function addManager(){
+ const name=document.getElementById('managerName').value.trim();
+ const email=document.getElementById('managerEmail').value.trim();
+ if(!name||!email)return alert('Completează numele și emailul.');
+ managers.push({name,email});
+ document.getElementById('managerName').value='';
+ document.getElementById('managerEmail').value='';
+ render();
+}
+
+function addMatch(){
+ const creator=document.getElementById('matchCreator').value.trim();
+ const opponent=document.getElementById('matchOpponent').value.trim();
+ const date=document.getElementById('matchDate').value;
+ const status=document.getElementById('matchStatus').value;
+ if(!creator||!opponent||!date)return alert('Completează toate câmpurile.');
+ matches.push({creator,opponent,date,status});
+ render();
+}
+
+function render(){
+ document.getElementById('creatorTable').innerHTML=creators.map(c=>
+ `<tr><td>${escapeHTML(c.name)}</td><td>${escapeHTML(c.tiktok)}</td><td>${escapeHTML(c.country)}</td></tr>`).join('');
+ document.getElementById('managerTable').innerHTML=managers.map(m=>
+ `<tr><td>${escapeHTML(m.name)}</td><td>${escapeHTML(m.email)}</td></tr>`).join('');
+ document.getElementById('matchTable').innerHTML=matches.map(m=>
+ `<tr><td>${escapeHTML(m.creator)}</td><td>${escapeHTML(m.opponent)}</td><td>${escapeHTML(m.date.replace('T',' '))}</td><td>${escapeHTML(m.status)}</td></tr>`).join('');
+ document.getElementById('creatorCount').textContent=creators.length;
+ document.getElementById('managerCount').textContent=managers.length;
+ document.getElementById('matchCount').textContent=matches.length;
+ document.getElementById('statCreators').textContent=creators.length;
+ document.getElementById('statManagers').textContent=managers.length;
+ document.getElementById('statMatches').textContent=matches.length;
+ document.getElementById('statConfirmed').textContent=matches.filter(m=>m.status==='Confirmat'||m.status==='Programat').length;
+}
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ })[c]);
+}
+</script>
+</body>
+</html>
