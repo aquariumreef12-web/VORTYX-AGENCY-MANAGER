@@ -433,5 +433,44 @@ vxCheckSession();
 </script>
 <!-- END VORTYX AUTHENTICATION -->
 
+<div id="vx-new-password" style="
+display:none;position:fixed;inset:0;background:#090811;
+z-index:10000;align-items:center;justify-content:center;
+flex-direction:column;color:white;font-family:Arial;padding:20px">
+
+  <h2 style="color:#b66aff">VORTYX - PAROLĂ NOUĂ</h2>
+
+  <input id="vx-new-pass" type="password"
+    placeholder="Introdu parola nouă"
+    style="padding:14px;width:100%;max-width:320px;margin:10px">
+
+  <button onclick="vxSaveNewPassword()" style="
+    background:#852cff;color:white;border:0;
+    padding:14px 30px;border-radius:8px;cursor:pointer">
+    SALVEAZĂ PAROLA
+  </button>
+</div>
+
+<script>
+async function vxSaveNewPassword() {
+  const password = document.getElementById("vx-new-pass").value;
+
+  if (password.length < 8) {
+    alert("Parola trebuie să aibă minimum 8 caractere.");
+    return;
+  }
+
+  const { error } = await vxSupabase.auth.updateUser({ password });
+
+  if (error) {
+    alert("Eroare: " + error.message);
+    return;
+  }
+
+  alert("Parola a fost schimbată. Te poți autentifica.");
+  location.href = "https://aquariumreef12-web.github.io/";
+}
+</script>
+
 </body>
 </html>
