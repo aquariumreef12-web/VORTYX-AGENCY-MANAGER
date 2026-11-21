@@ -332,7 +332,7 @@ async function vxLogin(email, password) {
 
   localStorage.setItem("vortyx_role", profile.role);
   document.getElementById("vx-login").style.display = "none";
-  document.getElementById("vx-app").style.display = "block";
+ document.getElementById("vx-login").style.display = "block";
 
   document.getElementById("vx-user-role").textContent =
     profile.role === "administrator" ? "ADMINISTRATOR" : "MANAGER";
