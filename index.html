@@ -319,7 +319,7 @@ async function vxLogin(email, password) {
     .single();
 
   if (profileError || !profile) {
-    alert("Contul nu are un rol configurat. Contactează administratorul.");
+    alert("Contul nu are un rol configurat.");
     await vxSupabase.auth.signOut();
     return;
   }
@@ -332,11 +332,10 @@ async function vxLogin(email, password) {
 
   localStorage.setItem("vortyx_role", profile.role);
   document.getElementById("vx-login").style.display = "none";
- document.getElementById("vx-login").style.display = "block";
+  document.getElementById("vx-app").style.display = "block";
 
   document.getElementById("vx-user-role").textContent =
     profile.role === "administrator" ? "ADMINISTRATOR" : "MANAGER";
-}
 }
 
 async function vxLogout() {
