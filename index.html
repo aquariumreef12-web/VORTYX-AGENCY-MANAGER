@@ -300,6 +300,7 @@ const vxSupabase = window.supabase.createClient(
   SUPABASE_KEY
 );
 
+
 async function vxLogin(email, password) {
   const { data, error } = await vxSupabase.auth.signInWithPassword({
     email,
@@ -312,7 +313,7 @@ async function vxLogin(email, password) {
   }
 
   const { data: profile, error: profileError } = await vxSupabase
-    .from("profiles")
+    .from("user_roles")
     .select("role")
     .eq("user_id", data.user.id)
     .single();
@@ -323,7 +324,7 @@ async function vxLogin(email, password) {
     return;
   }
 
-  if (!["admin", "manager"].includes(profile.role)) {
+  if (!["administrator", "manager"].includes(profile.role)) {
     alert("Rol neautorizat.");
     await vxSupabase.auth.signOut();
     return;
@@ -334,7 +335,8 @@ async function vxLogin(email, password) {
   document.getElementById("vx-app").style.display = "block";
 
   document.getElementById("vx-user-role").textContent =
-    profile.role === "admin" ? "ADMINISTRATOR" : "MANAGER";
+    profile.role === "administrator" ? "ADMINISTRATOR" : "MANAGER";
+}
 }
 
 async function vxLogout() {
