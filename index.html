@@ -344,7 +344,22 @@ async function vxLogout() {
   localStorage.removeItem("vortyx_role");
   location.reload();
 }
+async function vxResetPassword() {
+  const email = prompt("Introdu emailul administratorului:");
 
+  if (!email) return;
+
+  const { error } = await vxSupabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://aquariumreef12-web.github.io/"
+  });
+
+  if (error) {
+    alert("Eroare: " + error.message);
+    return;
+  }
+
+  alert("Linkul pentru resetarea parolei a fost trimis pe email.");
+}
 async function vxCheckSession() {
   const { data } = await vxSupabase.auth.getSession();
 
