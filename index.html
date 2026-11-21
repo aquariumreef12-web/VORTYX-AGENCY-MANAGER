@@ -18,7 +18,7 @@ header{padding:18px 22px;background:#100c1b;border-bottom:1px solid var(--border
 .logo span{color:white}
 .status{font-size:12px;color:#70f4ad}
 .layout{display:flex;min-height:calc(100vh - 65px)}
-nav{width:220px;padding:16px 12px;background:#100d19;border-right:1px solid var(--border)}
+nav{width:220px;flex-shrink:0;padding:16px 12px;background:#100d19;border-right:1px solid var(--border)}
 nav button{display:block;width:100%;padding:13px;margin:4px 0;background:transparent;border:0;border-radius:8px;color:#c5bad5;text-align:left;cursor:pointer}
 nav button.active,nav button:hover{background:#392052;color:white}
 main{padding:24px;width:100%;max-width:1400px;margin:auto}
@@ -122,24 +122,43 @@ header{padding:15px}
 <section id="creators" class="page">
 <h1>Creatori</h1>
 <p class="subtitle">Administrarea creatorilor VORTYX</p>
+
 <div class="section">
 <h2>Adaugă creator</h2>
 <input id="creatorName" placeholder="Nume complet">
 <input id="creatorTikTok" placeholder="Username TikTok">
 <input id="creatorUrl" placeholder="Link TikTok (opțional)">
 <input id="creatorWhatsapp" placeholder="WhatsApp (opțional)">
-<select id="creatorCountry">
+
+<select id="creatorCountry" onchange="updateLanguage()">
 <option value="România">România</option>
 <option value="Germania">Germania</option>
 </select>
+
+<select id="creatorLanguage">
+<option value="Română">Română</option>
+<option value="Germană">Germană</option>
+<option value="Engleză">Engleză</option>
+</select>
+
+<div id="creatorManagerBox">
+<label class="subtitle">Manager responsabil</label>
+<select id="creatorManager">
+<option value="">Fără manager repartizat</option>
+</select>
+</div>
+
 <button class="btn" id="creatorSave" onclick="addCreator()">SALVEAZĂ CREATOR</button>
 <p id="creatorMessage" class="subtitle"></p>
 </div>
+
 <div class="section">
 <h2>Lista creatorilor</h2>
 <div style="overflow-x:auto">
-<table><thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th><th>Status</th></tr></thead>
-<tbody id="creatorTable"></tbody></table>
+<table>
+<thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th><th>Manager</th><th>Status</th></tr></thead>
+<tbody id="creatorTable"></tbody>
+</table>
 </div>
 </div>
 </section>
@@ -152,16 +171,24 @@ header{padding:15px}
 <input id="matchOpponent" placeholder="Adversar">
 <input id="matchDate" type="datetime-local">
 <select id="matchStatus">
-<option>Propus</option><option>Confirmat</option>
-<option>Programat</option><option>Finalizat</option><option>Anulat</option>
+<option>Propus</option>
+<option>Confirmat</option>
+<option>Programat</option>
+<option>Finalizat</option>
+<option>Anulat</option>
 </select>
 <button class="btn" onclick="addMatch()">SALVEAZĂ MATCH</button>
 <p id="matchMessage" class="subtitle"></p>
 </div>
 <div class="section">
 <h2>Calendar match-uri</h2>
-<table><thead><tr><th>Creator</th><th>Adversar</th><th>Data</th><th>Status</th></tr></thead>
-<tbody id="matchTable"></tbody></table>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>Creator</th><th>Adversar</th><th>Data</th><th>Status</th></tr></thead>
+<tbody id="matchTable"></tbody>
+</table>
+</div>
+<p class="subtitle">Match-urile sunt momentan păstrate doar în memoria sesiunii.</p>
 </div>
 </section>
 
@@ -171,8 +198,12 @@ header{padding:15px}
 <div class="section">
 <h2>Manageri înregistrați</h2>
 <p class="subtitle">Conturile se creează din Supabase Authentication. Rolul se atribuie în tabelul user_roles.</p>
-<table><thead><tr><th>ID utilizator</th><th>Rol</th></tr></thead>
-<tbody id="managerTable"></tbody></table>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>ID utilizator</th><th>Rol</th></tr></thead>
+<tbody id="managerTable"></tbody>
+</table>
+</div>
 </div>
 </section>
 
@@ -204,8 +235,8 @@ header{padding:15px}
 </div>
 <div class="section">
 <h2>Înscriere creatori</h2>
-<p>România: <a href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" style="color:#b66aff">Link România</a></p>
-<p>Germania: <a href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" style="color:#b66aff">Link Germania</a></p>
+<p>România: <a href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" rel="noopener" style="color:#b66aff">Link România</a></p>
+<p>Germania: <a href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" rel="noopener" style="color:#b66aff">Link Germania</a></p>
 </div>
 </section>
 
@@ -213,96 +244,161 @@ header{padding:15px}
 <h1>Setări</h1>
 <div class="section">
 <h2>VORTYX AGENCY Manager</h2>
-<p>Versiune: 3.0</p>
+<p>Versiune: 4.0</p>
 <p>Interfață: Black / Neon Purple</p>
 <p>Platformă: Web / Mobile</p>
 <p class="tag">Cloudflare AI integrat</p>
 </div>
 </section>
+
 </main>
 </div>
 
-<div id="vx-user-panel">
+<div id="vx-user-panel" style="display:none">
 <span id="vx-user-role"></span>
 <button class="btn" onclick="vxLogout()">Ieșire</button>
 </div>
+
 <footer>VORTYX AGENCY MANAGER © 2026</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* CONFIGURARE */
 const SUPABASE_URL="https://ujtqbksmdzgllhxrznrc.supabase.co";
+
+/* Cheia publică JWT anon a proiectului tău */
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
+
 const VORTYX_AI_URL="https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
 const VORTYX_APP_URL="https://aquariumreef12-web.github.io/VORTYX-AGENCY-MANAGER/";
 
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let currentRole=null,currentUser=null;
-let creators=[],managers=[],matches=[];
+
+let currentRole=null;
+let currentUser=null;
+let creators=[];
+let managers=[];
+let matches=[];
 
 function el(id){return document.getElementById(id)}
 function msg(id,text){el(id).textContent=text}
+
 function showPage(id,button){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 el(id).classList.add("active");
 document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
 if(button)button.classList.add("active");
 }
+
 function escapeHTML(v){
-return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+return String(v??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
 }
 
-/* AUTH */
-async function getUserProfile(id){
-return await db.from("user_roles").select("role").eq("id",id).maybeSingle();
+function isAdmin(){
+return ["administrator","admin"].includes(currentRole);
 }
+
+/* AUTENTIFICARE */
+async function getUserProfile(id){
+return await db.from("user_roles")
+.select("id,role")
+.eq("id",id)
+.maybeSingle();
+}
+
 async function vxLogin(){
 const email=el("vx-email").value.trim();
 const password=el("vx-password").value;
-if(!email||!password)return msg("vx-login-message","Completează emailul și parola.");
+
+if(!email||!password){
+return msg("vx-login-message","Completează emailul și parola.");
+}
+
 msg("vx-login-message","Se verifică autentificarea...");
+
 const {data,error}=await db.auth.signInWithPassword({email,password});
-if(error)return msg("vx-login-message","Eroare: "+error.message);
+
+if(error){
+return msg("vx-login-message","Eroare: "+error.message);
+}
+
 await loadUser(data.user);
 }
+
 async function loadUser(user){
 currentUser=user;
+
 const {data:profile,error}=await getUserProfile(user.id);
+
 if(error||!profile){
 await db.auth.signOut();
+currentUser=null;
 return msg("vx-login-message","Rolul utilizatorului nu a fost găsit în user_roles.");
 }
+
 const role=String(profile.role||"").toLowerCase();
+
 if(!["administrator","admin","manager"].includes(role)){
 await db.auth.signOut();
+currentUser=null;
 return msg("vx-login-message","Rol neautorizat.");
 }
+
 currentRole=role;
+
 el("vx-login").style.display="none";
 el("vx-new-password").style.display="none";
 el("vx-app").style.display="block";
 el("vx-user-panel").style.display="block";
 el("vx-user-role").textContent=role.toUpperCase();
-await loadCreators();
+
 await loadManagers();
+await loadCreators();
 await testAIConnection();
 }
+
 async function vxCheckSession(){
-const {data}=await db.auth.getSession();
+const {data,error}=await db.auth.getSession();
+
+if(error){
+el("vx-login").style.display="flex";
+return;
+}
+
 if(!data.session){
 el("vx-login").style.display="flex";
 el("vx-user-panel").style.display="none";
 return;
 }
+
 await loadUser(data.session.user);
 }
-async function vxLogout(){await db.auth.signOut();location.reload()}
+
+async function vxLogout(){
+await db.auth.signOut();
+location.reload();
+}
+
 async function vxResetPassword(){
 const email=el("vx-email").value.trim();
-if(!email)return msg("vx-login-message","Introdu emailul contului.");
-const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:VORTYX_APP_URL});
-msg("vx-login-message",error?"Eroare: "+error.message:"Email de resetare trimis. Verifică Inbox și Spam.");
+
+if(!email){
+return msg("vx-login-message","Introdu emailul contului.");
 }
+
+const {error}=await db.auth.resetPasswordForEmail(email,{
+redirectTo:VORTYX_APP_URL
+});
+
+msg(
+"vx-login-message",
+error?"Eroare: "+error.message:"Email de resetare trimis. Verifică Inbox și Spam."
+);
+}
+
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"&&session){
 el("vx-login").style.display="none";
@@ -310,98 +406,197 @@ el("vx-app").style.display="none";
 el("vx-new-password").style.display="flex";
 }
 });
+
 async function vxSaveNewPassword(){
 const password=el("vx-new-pass").value;
-if(password.length<8)return msg("vx-password-message","Minimum 8 caractere.");
+
+if(password.length<8){
+return msg("vx-password-message","Minimum 8 caractere.");
+}
+
 const {error}=await db.auth.updateUser({password});
-if(error)return msg("vx-password-message",error.message);
+
+if(error){
+return msg("vx-password-message",error.message);
+}
+
 msg("vx-password-message","Parolă schimbată. Te poți autentifica.");
 await db.auth.signOut();
 }
 
-/* CREATORI */
-async function loadCreators(){
-const {data,error}=await db.from("creators").select("*").limit(500);
+/* MANAGERI */
+async function loadManagers(){
+const {data,error}=await db.from("user_roles")
+.select("id,role")
+.limit(300);
+
 if(error){
-msg("creatorMessage","Nu s-au putut încărca creatorii: "+error.message);
+console.error("Eroare manageri:",error);
+msg("activity","Eroare la încărcarea managerilor: "+error.message);
 return;
 }
-creators=data||[];
+
+managers=(data||[]).filter(m=>
+["manager","administrator","admin"].includes(
+String(m.role||"").toLowerCase()
+)
+);
+
+renderManagers();
+updateManagerSelect();
 render();
 }
+
+function renderManagers(){
+el("managerTable").innerHTML=managers.map(m=>{
+return `<tr>
+<td>${escapeHTML(m.id)}</td>
+<td>${escapeHTML(m.role)}</td>
+</tr>`;
+}).join("")||'<tr><td colspan="2">Nu există manageri.</td></tr>';
+}
+
+function updateManagerSelect(){
+const select=el("creatorManager");
+if(!select)return;
+
+if(!isAdmin()){
+el("creatorManagerBox").style.display="none";
+return;
+}
+
+el("creatorManagerBox").style.display="block";
+
+const options=managers
+.filter(m=>String(m.role||"").toLowerCase()==="manager")
+.map(m=>`<option value="${escapeHTML(m.id)}">${escapeHTML(m.id)}</option>`)
+.join("");
+
+select.innerHTML='<option value="">Fără manager repartizat</option>'+options;
+}
+
+/* CREATORI */
 function creatorFields(row){
 return {
-name:row.full_name??row.name??row.creator_name??"",
-tiktok:row.tiktok_username??row.tiktok??row.username??"",
+name:row.full_name??"",
+tiktok:row.tiktok_username??"",
 country:row.country??row.country_id??"",
+manager:row.manager_id??"",
 status:row.status??""
 };
 }
+
+async function loadCreators(){
+let query=db.from("creators").select("*").limit(500);
+
+/* Managerul vede doar creatorii repartizați lui */
+if(currentRole==="manager"){
+query=query.eq("manager_id",currentUser.id);
+}
+
+const {data,error}=await query;
+
+if(error){
+msg("creatorMessage","Nu s-au putut încărca creatorii: "+error.message);
+console.error(error);
+return;
+}
+
+creators=data||[];
+render();
+}
+
+function updateLanguage(){
+const country=el("creatorCountry").value;
+el("creatorLanguage").value=country==="Germania"?"Germană":"Română";
+}
+
 async function addCreator(){
 const name=el("creatorName").value.trim();
 const tiktok=el("creatorTikTok").value.trim().replace(/^@/,"");
 const url=el("creatorUrl").value.trim();
 const whatsapp=el("creatorWhatsapp").value.trim();
 const country=el("creatorCountry").value;
-if(!name||!tiktok)return msg("creatorMessage","Completează numele și username-ul TikTok.");
-if(!currentUser)return msg("creatorMessage","Sesiune expirată.");
+const language=el("creatorLanguage").value;
+
+if(!name||!tiktok){
+return msg("creatorMessage","Completează numele și username-ul TikTok.");
+}
+
+if(!currentUser){
+return msg("creatorMessage","Sesiune expirată.");
+}
+
+let managerId=null;
+
+if(currentRole==="manager"){
+managerId=currentUser.id;
+}else{
+managerId=el("creatorManager").value||null;
+}
+
 el("creatorSave").disabled=true;
-msg("creatorMessage","Se încearcă salvarea...");
-const sample=creators[0]||{};
-const candidates={
+msg("creatorMessage","Se salvează creatorul...");
+
+/*
+Coloanele sunt trimise explicit.
+country_id este codul țării (RO/DE).
+Dacă în baza ta country_id este UUID cu relație,
+va trebui folosit ID-ul corespunzător din tabelul de țări.
+*/
+const payload={
 full_name:name,
 tiktok_username:tiktok,
 tiktok_url:url||null,
 whatsapp:whatsapp||null,
-country:country,
-country_id:country,
+country_id:country==="România"?"RO":"DE",
+manager_id:managerId,
+language:language,
 status:"activ",
 created_at:new Date().toISOString(),
-manager_id:currentRole==="manager"?currentUser.id:null
+country:country,
+role:"creator"
 };
-const allowed=Object.keys(sample);
-const payload={};
-for(const key of Object.keys(candidates)){
-if(allowed.includes(key))payload[key]=candidates[key];
-}
-if(!Object.keys(payload).length){
-msg("creatorMessage","Schema coloanelor nu poate fi identificată automat. Nu s-a scris nimic în baza de date.");
-el("creatorSave").disabled=false;
-return;
-}
-const {error}=await db.from("creators").insert(payload);
+
+const {data,error}=await db.from("creators")
+.insert(payload)
+.select()
+.single();
+
 if(error){
 msg("creatorMessage","Eroare la salvare: "+error.message);
+console.error("Supabase insert error:",error);
 }else{
 el("creatorName").value="";
 el("creatorTikTok").value="";
 el("creatorUrl").value="";
 el("creatorWhatsapp").value="";
-msg("creatorMessage","Creator salvat.");
+el("creatorManager").value="";
+
+msg("creatorMessage","Creator salvat cu succes.");
 await loadCreators();
 }
+
 el("creatorSave").disabled=false;
 }
 
-/* MANAGERI */
-async function loadManagers(){
-const {data,error}=await db.from("user_roles").select("*").limit(300);
-if(error){console.error(error);return}
-managers=(data||[]).filter(x=>["manager","administrator","admin"].includes(String(x.role||"").toLowerCase()));
-render();
-}
-
-/* MATCH-URI: momentan în memorie */
+/* MATCH-URI */
 function addMatch(){
 const creator=el("matchCreator").value.trim();
 const opponent=el("matchOpponent").value.trim();
 const date=el("matchDate").value;
 const status=el("matchStatus").value;
-if(!creator||!opponent||!date)return msg("matchMessage","Completează toate câmpurile.");
+
+if(!creator||!opponent||!date){
+return msg("matchMessage","Completează toate câmpurile.");
+}
+
 matches.push({creator,opponent,date,status});
+
 el("matchCreator").value="";
 el("matchOpponent").value="";
 el("matchDate").value="";
+
 msg("matchMessage","Match adăugat în sesiunea curentă.");
 render();
 }
@@ -410,62 +605,118 @@ render();
 function render(){
 el("creatorTable").innerHTML=creators.map(row=>{
 const c=creatorFields(row);
-return `<tr><td>${escapeHTML(c.name)}</td><td>@${escapeHTML(c.tiktok)}</td><td>${escapeHTML(c.country)}</td><td>${escapeHTML(c.status)}</td></tr>`;
-}).join("")||'<tr><td colspan="4" class="empty">Nu există creatori.</td></tr>';
-el("managerTable").innerHTML=managers.map(m=>
-`<tr><td>${escapeHTML(m.user_id??m.id??"")}</td><td>${escapeHTML(m.role)}</td></tr>`
-).join("")||'<tr><td colspan="2">Nu există manageri.</td></tr>';
+const manager=managers.find(m=>m.id===c.manager);
+
+return `<tr>
+<td>${escapeHTML(c.name)}</td>
+<td>@${escapeHTML(c.tiktok)}</td>
+<td>${escapeHTML(c.country)}</td>
+<td>${escapeHTML(manager?manager.id:(c.manager||"—"))}</td>
+<td>${escapeHTML(c.status)}</td>
+</tr>`;
+}).join("")||'<tr><td colspan="5" class="empty">Nu există creatori.</td></tr>';
+
+renderManagers();
+
 el("matchTable").innerHTML=matches.map(m=>
-`<tr><td>${escapeHTML(m.creator)}</td><td>${escapeHTML(m.opponent)}</td><td>${escapeHTML(m.date.replace("T"," "))}</td><td>${escapeHTML(m.status)}</td></tr>`
-).join("");
+`<tr>
+<td>${escapeHTML(m.creator)}</td>
+<td>${escapeHTML(m.opponent)}</td>
+<td>${escapeHTML(m.date.replace("T"," "))}</td>
+<td>${escapeHTML(m.status)}</td>
+</tr>`
+).join("")||'<tr><td colspan="4" class="empty">Nu există match-uri.</td></tr>';
+
 el("creatorCount").textContent=creators.length;
-el("managerCount").textContent=managers.length;
+el("managerCount").textContent=managers.filter(m=>
+String(m.role).toLowerCase()==="manager"
+).length;
+
 el("matchCount").textContent=matches.length;
+
 el("statCreators").textContent=creators.length;
-el("statManagers").textContent=managers.length;
+el("statManagers").textContent=managers.filter(m=>
+String(m.role).toLowerCase()==="manager"
+).length;
 el("statMatches").textContent=matches.length;
 }
 
-/* AI */
+/* VORTYX AI */
 async function testAIConnection(){
 try{
-const r=await fetch("https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/health");
-const data=await r.json();
-if(!r.ok||data.status!=="online"||!data.ai)throw Error();
+const response=await fetch(
+"https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/health"
+);
+
+const data=await response.json();
+
+if(!response.ok||data.status!=="online"||!data.ai){
+throw new Error("AI indisponibil");
+}
+
 el("ai-status").textContent="Conectat la VORTYX AI";
-}catch(e){
+}catch(error){
 el("ai-status").textContent="Conexiune indisponibilă";
 }
 }
+
 function addChatMessage(text,type){
-const chat=el("ai-chat"),div=document.createElement("div");
-div.className="chat-message "+(type==="user"?"chat-user":type==="ai"?"chat-ai":"chat-system");
-div.textContent=text;chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+const chat=el("ai-chat");
+const div=document.createElement("div");
+
+div.className="chat-message "+
+(type==="user"?"chat-user":type==="ai"?"chat-ai":"chat-system");
+
+div.textContent=text;
+chat.appendChild(div);
+chat.scrollTop=chat.scrollHeight;
 }
+
 async function sendAIMessage(){
-const input=el("ai-message"),button=el("ai-send");
+const input=el("ai-message");
+const button=el("ai-send");
 const message=input.value.trim();
+
 if(!message)return;
-input.value="";input.disabled=true;button.disabled=true;
+
+input.value="";
+input.disabled=true;
+button.disabled=true;
+
 addChatMessage(message,"user");
 addChatMessage("VORTYX AI pregătește răspunsul...","system");
+
 const loading=el("ai-chat").lastElementChild;
+
 try{
 const response=await fetch(VORTYX_AI_URL,{
-method:"POST",headers:{"Content-Type":"application/json"},
+method:"POST",
+headers:{"Content-Type":"application/json"},
 body:JSON.stringify({message})
 });
+
 const result=await response.json();
+
 loading.remove();
-if(!response.ok||!result.ok||!result.answer)throw Error(result.error||"AI nu a răspuns.");
+
+if(!response.ok||!result.ok||!result.answer){
+throw new Error(result.error||"AI nu a răspuns.");
+}
+
 addChatMessage(result.answer,"ai");
-}catch(e){
-loading.remove();addChatMessage("Eroare VORTYX AI: "+e.message,"system");
+
+}catch(error){
+loading.remove();
+addChatMessage("Eroare VORTYX AI: "+error.message,"system");
+
 }finally{
-input.disabled=false;button.disabled=false;input.focus();
+input.disabled=false;
+button.disabled=false;
+input.focus();
 }
 }
 
+/* PORNIRE */
 render();
 vxCheckSession();
 </script>
