@@ -452,6 +452,14 @@ flex-direction:column;color:white;font-family:Arial;padding:20px">
 </div>
 
 <script>
+  
+vxSupabase.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY" && session) {
+    document.getElementById("vx-login").style.display = "none";
+    document.getElementById("vx-new-password").style.display = "flex";
+  }
+});
+
 async function vxSaveNewPassword() {
   const password = document.getElementById("vx-new-pass").value;
 
