@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VORTYX AGENCY Manager</title>
+
 <style>
 :root {
   --bg:#090811;
@@ -17,336 +18,463 @@
 }
 *{box-sizing:border-box}
 body{
- margin:0;background:var(--bg);color:var(--text);
- font-family:Arial,sans-serif;
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,sans-serif;
 }
 header{
- padding:20px 24px;background:#100c1b;
- border-bottom:1px solid var(--border);
- display:flex;justify-content:space-between;align-items:center;
+  padding:20px 24px;background:#100c1b;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
 }
 .logo{font-size:23px;font-weight:900;letter-spacing:3px;color:#c18aff}
 .logo span{color:white}
 .status{color:#6effb0;font-size:12px}
 .layout{display:flex;min-height:calc(100vh - 70px)}
 nav{
- width:225px;padding:20px 12px;
- background:#100d19;border-right:1px solid var(--border);
+  width:225px;padding:20px 12px;
+  background:#100d19;border-right:1px solid var(--border);
 }
 nav button{
- width:100%;padding:14px;margin:4px 0;
- background:transparent;border:0;border-radius:9px;
- color:#c5bad5;text-align:left;cursor:pointer;font-size:14px;
+  width:100%;padding:14px;margin:4px 0;
+  background:transparent;border:0;border-radius:9px;
+  color:#c5bad5;text-align:left;cursor:pointer;font-size:14px;
 }
-nav button:hover,nav button.active{
- background:#392052;color:white;
-}
+nav button:hover,nav button.active{background:#392052;color:white}
 main{padding:26px;width:100%;max-width:1400px;margin:auto}
 h1{font-size:25px;margin-top:0}
 .subtitle{color:var(--muted);font-size:13px}
 .cards{
- display:grid;grid-template-columns:repeat(4,1fr);
- gap:15px;margin:25px 0;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:15px;margin:25px 0;
 }
-.card{
- background:var(--panel);border:1px solid var(--border);
- border-radius:13px;padding:20px;
+.card,.section{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:13px;padding:20px;
 }
 .card small{color:var(--muted)}
 .number{font-size:30px;font-weight:bold;margin-top:12px;color:#c18aff}
-.section{
- background:var(--panel);border:1px solid var(--border);
- border-radius:13px;padding:20px;margin-top:18px;
-}
+.section{margin-top:18px}
 .section h2{font-size:17px;margin-top:0}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:13px 9px;text-align:left;border-bottom:1px solid var(--border)}
 th{color:#b995e7}
-input,select{
- background:#0e0b17;border:1px solid var(--border);
- border-radius:7px;padding:11px;color:white;width:100%;
- margin:6px 0 13px;
+input,select,textarea{
+  background:#0e0b17;border:1px solid var(--border);
+  border-radius:7px;padding:11px;color:white;width:100%;
+  margin:6px 0 13px;font:inherit;
 }
+textarea{resize:vertical;min-height:75px}
 .btn{
- background:var(--purple);color:white;border:0;
- padding:11px 17px;border-radius:8px;cursor:pointer;
- font-weight:bold;
+  background:var(--purple);color:white;border:0;
+  padding:11px 17px;border-radius:8px;cursor:pointer;
+  font-weight:bold;
 }
 .btn:hover{background:#a04dff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .page{display:none}
 .page.active{display:block}
 .tag{color:#70f4ad}
 .empty{color:var(--muted);padding:15px 0}
 footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
+#vx-login,#vx-new-password{
+  position:fixed;inset:0;background:#090811;z-index:9999;
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;color:white;font-family:Arial;padding:20px;
+}
+.login-box{width:100%;max-width:360px;text-align:center}
+.login-box input{padding:14px}
+.login-box button{margin:7px}
+.chat-box{
+  height:360px;overflow-y:auto;background:#0e0b17;
+  border:1px solid var(--border);border-radius:10px;
+  padding:14px;margin:15px 0;
+}
+.chat-message{
+  padding:11px 13px;margin:9px 0;border-radius:10px;
+  max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere;
+  line-height:1.5;font-size:14px;
+}
+.chat-user{background:#392052;margin-left:auto}
+.chat-ai{background:#21182e;margin-right:auto}
+.chat-system{color:#c7b6dd;text-align:center;font-size:12px}
+.chat-row{display:flex;gap:10px;align-items:center}
+.chat-row input{margin:0}
+.chat-row button{white-space:nowrap}
+#vx-app{display:none}
+#vx-user-panel{
+  position:fixed;bottom:10px;right:10px;
+  background:#20132e;color:white;padding:12px;
+  border-radius:8px;z-index:1000;
+}
 @media(max-width:750px){
- .layout{display:block}
- nav{width:100%;display:flex;overflow-x:auto;padding:8px}
- nav button{min-width:max-content;width:auto}
- main{padding:17px}
- .cards{grid-template-columns:repeat(2,1fr)}
- header{padding:16px}
+  .layout{display:block}
+  nav{width:100%;display:flex;overflow-x:auto;padding:8px}
+  nav button{min-width:max-content;width:auto}
+  main{padding:17px}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  header{padding:16px}
 }
 @media(max-width:380px){
- .cards{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr}
+  .chat-row{flex-direction:column}
 }
 </style>
 </head>
+
 <body>
 
+<!-- LOGIN -->
+<div id="vx-login">
+  <div class="login-box">
+    <h1 style="color:#b66aff;letter-spacing:3px">VORTYX AGENCY</h1>
+    <h3>MANAGER LOGIN</h3>
+
+    <input id="vx-email" type="email" placeholder="Email">
+    <input id="vx-password" type="password" placeholder="Parolă">
+
+    <button class="btn" onclick="vxLogin()">INTRĂ ÎN APLICAȚIE</button>
+    <br>
+    <button class="btn" onclick="vxResetPassword()">AM UITAT PAROLA</button>
+    <p id="vx-login-message" class="subtitle"></p>
+  </div>
+</div>
+
+<!-- PASSWORD RECOVERY -->
+<div id="vx-new-password">
+  <div class="login-box">
+    <h2 style="color:#b66aff">VORTYX - PAROLĂ NOUĂ</h2>
+    <input id="vx-new-pass" type="password" placeholder="Introdu parola nouă">
+    <button class="btn" onclick="vxSaveNewPassword()">SALVEAZĂ PAROLA</button>
+  </div>
+</div>
+
+<!-- APPLICATION -->
+<div id="vx-app">
+
 <header>
- <div class="logo">VORTYX <span>AGENCY</span></div>
- <div class="status">● SYSTEM ONLINE</div>
+  <div class="logo">VORTYX <span>AGENCY</span></div>
+  <div class="status">● SYSTEM ONLINE</div>
 </header>
 
 <div class="layout">
+
 <nav>
- <button class="active" onclick="showPage('dashboard',this)">⌂ Dashboard</button>
- <button onclick="showPage('creators',this)">♙ Creatori</button>
- <button onclick="showPage('matches',this)">⚔ Match-uri LIVE</button>
- <button onclick="showPage('managers',this)">♧ Manageri</button>
- <button onclick="showPage('statistics',this)">▥ Statistici</button>
- <button onclick="showPage('telegram',this)">✉ Telegram BOT</button>
- <button onclick="showPage('settings',this)">⚙ Setări</button>
+  <button class="active" onclick="showPage('dashboard',this)">⌂ Dashboard</button>
+  <button onclick="showPage('creators',this)">♙ Creatori</button>
+  <button onclick="showPage('matches',this)">⚔ Match-uri LIVE</button>
+  <button onclick="showPage('managers',this)">♧ Manageri</button>
+  <button onclick="showPage('statistics',this)">▥ Statistici</button>
+  <button onclick="showPage('telegram',this)">✉ Telegram BOT / AI</button>
+  <button onclick="showPage('settings',this)">⚙ Setări</button>
 </nav>
 
 <main>
 
 <section id="dashboard" class="page active">
- <h1>Dashboard</h1>
- <div class="subtitle">Centrul de control VORTYX AGENCY</div>
- <div class="cards">
-  <div class="card"><small>Total creatori</small><div class="number" id="creatorCount">0</div></div>
-  <div class="card"><small>Manageri</small><div class="number" id="managerCount">0</div></div>
-  <div class="card"><small>Match-uri programate</small><div class="number" id="matchCount">0</div></div>
-  <div class="card"><small>Status sistem</small><div class="number" style="font-size:20px">ONLINE</div></div>
- </div>
- <div class="section">
-  <h2>Activitate recentă</h2>
-  <p class="empty">Nu există încă activitate înregistrată.</p>
- </div>
+  <h1>Dashboard</h1>
+  <div class="subtitle">Centrul de control VORTYX AGENCY</div>
+
+  <div class="cards">
+    <div class="card"><small>Total creatori</small><div class="number" id="creatorCount">0</div></div>
+    <div class="card"><small>Manageri</small><div class="number" id="managerCount">0</div></div>
+    <div class="card"><small>Match-uri programate</small><div class="number" id="matchCount">0</div></div>
+    <div class="card"><small>Status sistem</small><div class="number" style="font-size:20px">ONLINE</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Activitate recentă</h2>
+    <p class="empty">Nu există încă activitate înregistrată.</p>
+  </div>
 </section>
 
 <section id="creators" class="page">
- <h1>Creatori</h1>
- <p class="subtitle">Administrarea creatorilor VORTYX</p>
- <div class="section">
-  <h2>Adaugă creator</h2>
-  <input id="creatorName" placeholder="Nume creator">
-  <input id="creatorTikTok" placeholder="Username TikTok">
-  <select id="creatorCountry">
-   <option value="România">România</option>
-   <option value="Germania">Germania</option>
-  </select>
-  <button class="btn" onclick="addCreator()">Adaugă creator</button>
- </div>
- <div class="section">
-  <h2>Lista creatorilor</h2>
-  <table><thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th></tr></thead>
-  <tbody id="creatorTable"></tbody></table>
- </div>
+  <h1>Creatori</h1>
+  <p class="subtitle">Administrarea creatorilor VORTYX</p>
+
+  <div class="section">
+    <h2>Adaugă creator</h2>
+    <input id="creatorName" placeholder="Nume creator">
+    <input id="creatorTikTok" placeholder="Username TikTok">
+    <select id="creatorCountry">
+      <option value="România">România</option>
+      <option value="Germania">Germania</option>
+    </select>
+    <button class="btn" onclick="addCreator()">Adaugă creator</button>
+  </div>
+
+  <div class="section">
+    <h2>Lista creatorilor</h2>
+    <table>
+      <thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th></tr></thead>
+      <tbody id="creatorTable"></tbody>
+    </table>
+  </div>
 </section>
 
 <section id="matches" class="page">
- <h1>Match-uri LIVE</h1>
- <p class="subtitle">Programare și urmărire meciuri</p>
- <div class="section">
-  <h2>Programează un match</h2>
-  <input id="matchCreator" placeholder="Creator VORTYX">
-  <input id="matchOpponent" placeholder="Adversar">
-  <input id="matchDate" type="datetime-local">
-  <select id="matchStatus">
-   <option>Propus</option>
-   <option>Confirmat</option>
-   <option>Programat</option>
-   <option>Finalizat</option>
-   <option>Anulat</option>
-  </select>
-  <button class="btn" onclick="addMatch()">Salvează match</button>
- </div>
- <div class="section">
-  <h2>Calendar match-uri</h2>
-  <table><thead><tr><th>Creator</th><th>Adversar</th><th>Data</th><th>Status</th></tr></thead>
-  <tbody id="matchTable"></tbody></table>
- </div>
+  <h1>Match-uri LIVE</h1>
+  <p class="subtitle">Programare și urmărire meciuri</p>
+
+  <div class="section">
+    <h2>Programează un match</h2>
+    <input id="matchCreator" placeholder="Creator VORTYX">
+    <input id="matchOpponent" placeholder="Adversar">
+    <input id="matchDate" type="datetime-local">
+    <select id="matchStatus">
+      <option>Propus</option>
+      <option>Confirmat</option>
+      <option>Programat</option>
+      <option>Finalizat</option>
+      <option>Anulat</option>
+    </select>
+    <button class="btn" onclick="addMatch()">Salvează match</button>
+  </div>
+
+  <div class="section">
+    <h2>Calendar match-uri</h2>
+    <table>
+      <thead><tr><th>Creator</th><th>Adversar</th><th>Data</th><th>Status</th></tr></thead>
+      <tbody id="matchTable"></tbody>
+    </table>
+  </div>
 </section>
 
 <section id="managers" class="page">
- <h1>Manageri</h1>
- <p class="subtitle">Echipa de administrare VORTYX</p>
- <div class="section">
-  <h2>Adaugă manager</h2>
-  <input id="managerName" placeholder="Nume manager">
-  <input id="managerEmail" type="email" placeholder="Email manager">
-  <button class="btn" onclick="addManager()">Adaugă manager</button>
- </div>
- <div class="section">
-  <h2>Lista managerilor</h2>
-  <table><thead><tr><th>Nume</th><th>Email</th></tr></thead>
-  <tbody id="managerTable"></tbody></table>
- </div>
+  <h1>Manageri</h1>
+  <p class="subtitle">Echipa de administrare VORTYX</p>
+
+  <div class="section">
+    <h2>Adaugă manager</h2>
+    <input id="managerName" placeholder="Nume manager">
+    <input id="managerEmail" type="email" placeholder="Email manager">
+    <button class="btn" onclick="addManager()">Adaugă manager</button>
+  </div>
+
+  <div class="section">
+    <h2>Lista managerilor</h2>
+    <table>
+      <thead><tr><th>Nume</th><th>Email</th></tr></thead>
+      <tbody id="managerTable"></tbody>
+    </table>
+  </div>
 </section>
 
 <section id="statistics" class="page">
- <h1>Statistici</h1>
- <p class="subtitle">Situația activității agenției</p>
- <div class="cards">
-  <div class="card"><small>Creatori înregistrați</small><div class="number" id="statCreators">0</div></div>
-  <div class="card"><small>Manageri înregistrați</small><div class="number" id="statManagers">0</div></div>
-  <div class="card"><small>Match-uri totale</small><div class="number" id="statMatches">0</div></div>
-  <div class="card"><small>Match-uri confirmate</small><div class="number" id="statConfirmed">0</div></div>
- </div>
+  <h1>Statistici</h1>
+  <p class="subtitle">Situația activității agenției</p>
+
+  <div class="cards">
+    <div class="card"><small>Creatori înregistrați</small><div class="number" id="statCreators">0</div></div>
+    <div class="card"><small>Manageri înregistrați</small><div class="number" id="statManagers">0</div></div>
+    <div class="card"><small>Match-uri totale</small><div class="number" id="statMatches">0</div></div>
+    <div class="card"><small>Match-uri confirmate</small><div class="number" id="statConfirmed">0</div></div>
+  </div>
 </section>
 
+<!-- AI CHAT -->
 <section id="telegram" class="page">
- <h1>Telegram BOT</h1>
- <p class="subtitle">Conectarea botului VORTYX la aplicația managerilor</p>
- <div class="section">
-  <h2>Conexiune webhook</h2>
-  <p>Status: <span class="tag">În așteptarea conectării</span></p>
-  <p class="empty">Vom conecta aici webhook-ul Cloudflare deja configurat și botul Telegram.</p>
- </div>
+  <h1>VORTYX AI</h1>
+  <p class="subtitle">Asistentul inteligent VORTYX INTERNATIONAL</p>
+
+  <div class="section">
+    <h2>Conexiune AI</h2>
+    <p>Status: <span class="tag" id="ai-status">Verificare disponibilă</span></p>
+    <p class="subtitle">Motor AI: Cloudflare Workers AI</p>
+    <p class="subtitle">Agent: VORTYX AI</p>
+  </div>
+
+  <div class="section">
+    <h2>Conversație cu VORTYX AI</h2>
+
+    <div id="ai-chat" class="chat-box">
+      <div class="chat-system">
+        VORTYX AI este pregătit. Scrie o întrebare pentru a începe.
+      </div>
+    </div>
+
+    <div class="chat-row">
+      <input id="ai-message" placeholder="Scrie mesajul tău..."
+        onkeydown="if(event.key==='Enter') sendAIMessage()">
+      <button class="btn" id="ai-send" onclick="sendAIMessage()">TRIMITE</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Înscriere creatori</h2>
+    <p>România: <a href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" style="color:#b66aff">Link înscriere România</a></p>
+    <p>Germania: <a href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" style="color:#b66aff">Link înscriere Germania</a></p>
+  </div>
 </section>
 
 <section id="settings" class="page">
- <h1>Setări</h1>
- <div class="section">
-  <h2>VORTYX AGENCY Manager</h2>
-  <p>Versiune: 1.0</p>
-  <p>Interfață: Black / Neon Purple</p>
-  <p>Platformă: Web / Mobile</p>
-  <p class="tag">Mod interfață demonstrativă</p>
- </div>
+  <h1>Setări</h1>
+  <div class="section">
+    <h2>VORTYX AGENCY Manager</h2>
+    <p>Versiune: 2.0</p>
+    <p>Interfață: Black / Neon Purple</p>
+    <p>Platformă: Web / Mobile</p>
+    <p class="tag">Cloudflare AI: integrat</p>
+  </div>
 </section>
 
 </main>
 </div>
 
+<div id="vx-user-panel">
+  <span id="vx-user-role"></span>
+  <button class="btn" onclick="vxLogout()">Ieșire</button>
+</div>
+
 <footer>VORTYX AGENCY MANAGER © 2026</footer>
+</div>
 
-<script>
-const creators=[];
-const managers=[];
-const matches=[];
-
-function showPage(id,button){
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
- button.classList.add('active');
-}
-
-function addCreator(){
- const name=document.getElementById('creatorName').value.trim();
- const tiktok=document.getElementById('creatorTikTok').value.trim();
- const country=document.getElementById('creatorCountry').value;
- if(!name||!tiktok)return alert('Completează numele și username-ul.');
- creators.push({name,tiktok,country});
- document.getElementById('creatorName').value='';
- document.getElementById('creatorTikTok').value='';
- render();
-}
-
-function addManager(){
- const name=document.getElementById('managerName').value.trim();
- const email=document.getElementById('managerEmail').value.trim();
- if(!name||!email)return alert('Completează numele și emailul.');
- managers.push({name,email});
- document.getElementById('managerName').value='';
- document.getElementById('managerEmail').value='';
- render();
-}
-
-function addMatch(){
- const creator=document.getElementById('matchCreator').value.trim();
- const opponent=document.getElementById('matchOpponent').value.trim();
- const date=document.getElementById('matchDate').value;
- const status=document.getElementById('matchStatus').value;
- if(!creator||!opponent||!date)return alert('Completează toate câmpurile.');
- matches.push({creator,opponent,date,status});
- render();
-}
-
-function render(){
- document.getElementById('creatorTable').innerHTML=creators.map(c=>
- `<tr><td>${escapeHTML(c.name)}</td><td>${escapeHTML(c.tiktok)}</td><td>${escapeHTML(c.country)}</td></tr>`).join('');
- document.getElementById('managerTable').innerHTML=managers.map(m=>
- `<tr><td>${escapeHTML(m.name)}</td><td>${escapeHTML(m.email)}</td></tr>`).join('');
- document.getElementById('matchTable').innerHTML=matches.map(m=>
- `<tr><td>${escapeHTML(m.creator)}</td><td>${escapeHTML(m.opponent)}</td><td>${escapeHTML(m.date.replace('T',' '))}</td><td>${escapeHTML(m.status)}</td></tr>`).join('');
- document.getElementById('creatorCount').textContent=creators.length;
- document.getElementById('managerCount').textContent=managers.length;
- document.getElementById('matchCount').textContent=matches.length;
- document.getElementById('statCreators').textContent=creators.length;
- document.getElementById('statManagers').textContent=managers.length;
- document.getElementById('statMatches').textContent=matches.length;
- document.getElementById('statConfirmed').textContent=matches.filter(m=>m.status==='Confirmat'||m.status==='Programat').length;
-}
-
-function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,c=>({
- '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
- })[c]);
-}
-</script>
-  
-<!-- VORTYX SUPABASE AUTHENTICATION -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+/* CONFIGURARE SUPABASE */
 const SUPABASE_URL = "https://ujtqbksmdzgllhxrznrc.supabase.co";
+
+/* Cheia publică anon a proiectului Supabase */
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
+
 const vxSupabase = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
+/* CONFIGURARE VORTYX AI */
+const VORTYX_AI_URL =
+  "https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
 
-async function vxLogin(email, password) {
+const creators = [];
+const managers = [];
+const matches = [];
+
+let currentRole = null;
+
+/* NAVIGARE */
+function showPage(id, button) {
+  document.querySelectorAll(".page").forEach(page =>
+    page.classList.remove("active")
+  );
+
+  document.getElementById(id).classList.add("active");
+
+  document.querySelectorAll("nav button").forEach(btn =>
+    btn.classList.remove("active")
+  );
+
+  button.classList.add("active");
+}
+
+/* AUTENTIFICARE */
+async function getUserProfile(userId) {
+  return await vxSupabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .single();
+}
+
+async function vxLogin() {
+  const email = document.getElementById("vx-email").value.trim();
+  const password = document.getElementById("vx-password").value;
+  const message = document.getElementById("vx-login-message");
+
+  if (!email || !password) {
+    message.textContent = "Completează emailul și parola.";
+    return;
+  }
+
+  message.textContent = "Se verifică autentificarea...";
+
   const { data, error } = await vxSupabase.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
-    alert("Autentificare eșuată: " + error.message);
+    message.textContent = "Autentificare eșuată: " + error.message;
     return;
   }
 
-  const { data: profile, error: profileError } = await vxSupabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", data.user.id)
-    .single();
+  const { data: profile, error: profileError } =
+    await getUserProfile(data.user.id);
 
   if (profileError || !profile) {
-    alert("Contul nu are un rol configurat.");
+    message.textContent = "Nu există un rol configurat în profiles.";
     await vxSupabase.auth.signOut();
     return;
   }
 
-  if (!["administrator", "manager"].includes(profile.role)) {
-    alert("Rol neautorizat.");
+  const role = String(profile.role || "").toLowerCase();
+
+  if (!["administrator", "admin", "manager"].includes(role)) {
+    message.textContent = "Rol neautorizat.";
     await vxSupabase.auth.signOut();
     return;
   }
 
-  localStorage.setItem("vortyx_role", profile.role);
+  await showApplication(role);
+}
+
+async function showApplication(role) {
+  currentRole = role;
+
   document.getElementById("vx-login").style.display = "none";
+  document.getElementById("vx-new-password").style.display = "none";
   document.getElementById("vx-app").style.display = "block";
 
   document.getElementById("vx-user-role").textContent =
-    profile.role === "administrator" ? "ADMINISTRATOR" : "MANAGER";
+    role.toUpperCase();
+
+  await testAIConnection();
+}
+
+async function vxCheckSession() {
+  const { data, error } = await vxSupabase.auth.getSession();
+
+  if (error || !data.session) {
+    document.getElementById("vx-login").style.display = "flex";
+    document.getElementById("vx-app").style.display = "none";
+    return;
+  }
+
+  const { data: profile, error: profileError } =
+    await getUserProfile(data.session.user.id);
+
+  if (profileError || !profile) {
+    await vxSupabase.auth.signOut();
+    document.getElementById("vx-login").style.display = "flex";
+    document.getElementById("vx-app").style.display = "none";
+    return;
+  }
+
+  const role = String(profile.role || "").toLowerCase();
+
+  if (!["administrator", "admin", "manager"].includes(role)) {
+    await vxSupabase.auth.signOut();
+    document.getElementById("vx-login").style.display = "flex";
+    document.getElementById("vx-app").style.display = "none";
+    return;
+  }
+
+  await showApplication(role);
 }
 
 async function vxLogout() {
   await vxSupabase.auth.signOut();
-  localStorage.removeItem("vortyx_role");
   location.reload();
 }
-async function vxResetPassword() {
-  const email = prompt("Introdu emailul administratorului:");
 
-  if (!email) return;
+/* RESETARE PAROLA */
+async function vxResetPassword() {
+  const email = document.getElementById("vx-email").value.trim();
+
+  if (!email) {
+    alert("Introdu emailul contului.");
+    return;
+  }
 
   const { error } = await vxSupabase.auth.resetPasswordForEmail(email, {
     redirectTo: "https://aquariumreef12-web.github.io/"
@@ -357,105 +485,13 @@ async function vxResetPassword() {
     return;
   }
 
-  alert("Linkul pentru resetarea parolei a fost trimis pe email.");
-}
-async function vxCheckSession() {
-  const { data } = await vxSupabase.auth.getSession();
-
-  if (data.session) {
-    const { data: profile } = await vxSupabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", data.session.user.id)
-      .single();
-
-    if (profile && ["admin", "manager"].includes(profile.role)) {
-      document.getElementById("vx-login").style.display = "none";
-      document.getElementById("vx-app").style.display = "block";
-      document.getElementById("vx-user-role").textContent =
-        profile.role.toUpperCase();
-      return;
-    }
-
-    await vxSupabase.auth.signOut();
-  }
-
-  document.getElementById("vx-login").style.display = "flex";
-  document.getElementById("vx-app").style.display = "none";
+  alert("Linkul de resetare a fost trimis pe email.");
 }
 
-</script>
-
-<div id="vx-login" style="
-display:none;position:fixed;inset:0;background:#090811;
-z-index:9999;align-items:center;justify-content:center;
-flex-direction:column;color:white;font-family:Arial;padding:20px">
-
-  <h1 style="color:#b66aff;letter-spacing:3px">VORTYX AGENCY</h1>
-  <h3>MANAGER LOGIN</h3>
-
-  <input id="vx-email" type="email" placeholder="Email"
-    style="padding:14px;width:100%;max-width:320px;margin:8px">
-
-  <input id="vx-password" type="password" placeholder="Parolă"
-    style="padding:14px;width:100%;max-width:320px;margin:8px">
-
-  <button onclick="vxLogin(
-    document.getElementById('vx-email').value,
-    document.getElementById('vx-password').value
-  )" style="
-  background:#852cff;color:white;border:0;padding:14px 30px;
-  border-radius:8px;margin-top:12px;cursor:pointer">
-    INTRĂ ÎN APLICAȚIE
-  </button>
-  
-<button onclick="vxResetPassword()" style="
-  background:transparent;color:#b98cff;border:1px solid #852cff;
-  padding:10px 18px;border-radius:8px;margin-top:12px;cursor:pointer">
-  AM UITAT PAROLA
-</button>
-
-</div>
-
-<div id="vx-app" style="display:none">
-  <div style="
-  position:fixed;bottom:10px;right:10px;background:#20132e;
-  color:white;padding:12px;border-radius:8px;z-index:999">
-    <span id="vx-user-role"></span>
-    <button onclick="vxLogout()" style="margin-left:10px">
-      Ieșire
-    </button>
-  </div>
-</div>
-
-<script>
-vxCheckSession();
-</script>
-<!-- END VORTYX AUTHENTICATION -->
-
-<div id="vx-new-password" style="
-display:none;position:fixed;inset:0;background:#090811;
-z-index:10000;align-items:center;justify-content:center;
-flex-direction:column;color:white;font-family:Arial;padding:20px">
-
-  <h2 style="color:#b66aff">VORTYX - PAROLĂ NOUĂ</h2>
-
-  <input id="vx-new-pass" type="password"
-    placeholder="Introdu parola nouă"
-    style="padding:14px;width:100%;max-width:320px;margin:10px">
-
-  <button onclick="vxSaveNewPassword()" style="
-    background:#852cff;color:white;border:0;
-    padding:14px 30px;border-radius:8px;cursor:pointer">
-    SALVEAZĂ PAROLA
-  </button>
-</div>
-
-<script>
-  
 vxSupabase.auth.onAuthStateChange((event, session) => {
   if (event === "PASSWORD_RECOVERY" && session) {
     document.getElementById("vx-login").style.display = "none";
+    document.getElementById("vx-app").style.display = "none";
     document.getElementById("vx-new-password").style.display = "flex";
   }
 });
@@ -475,9 +511,211 @@ async function vxSaveNewPassword() {
     return;
   }
 
-  alert("Parola a fost schimbată. Te poți autentifica.");
-  location.href = "https://aquariumreef12-web.github.io/";
+  alert("Parola a fost schimbată.");
+  await vxSupabase.auth.signOut();
+  location.reload();
 }
+
+/* CREATORI */
+function addCreator() {
+  const name = document.getElementById("creatorName").value.trim();
+  const tiktok = document.getElementById("creatorTikTok").value.trim();
+  const country = document.getElementById("creatorCountry").value;
+
+  if (!name || !tiktok) {
+    alert("Completează numele și username-ul.");
+    return;
+  }
+
+  creators.push({ name, tiktok, country });
+
+  document.getElementById("creatorName").value = "";
+  document.getElementById("creatorTikTok").value = "";
+
+  render();
+}
+
+/* MANAGERI */
+function addManager() {
+  const name = document.getElementById("managerName").value.trim();
+  const email = document.getElementById("managerEmail").value.trim();
+
+  if (!name || !email) {
+    alert("Completează numele și emailul.");
+    return;
+  }
+
+  managers.push({ name, email });
+
+  document.getElementById("managerName").value = "";
+  document.getElementById("managerEmail").value = "";
+
+  render();
+}
+
+/* MATCH-URI */
+function addMatch() {
+  const creator = document.getElementById("matchCreator").value.trim();
+  const opponent = document.getElementById("matchOpponent").value.trim();
+  const date = document.getElementById("matchDate").value;
+  const status = document.getElementById("matchStatus").value;
+
+  if (!creator || !opponent || !date) {
+    alert("Completează toate câmpurile.");
+    return;
+  }
+
+  matches.push({ creator, opponent, date, status });
+  render();
+}
+
+/* AFIȘARE DATE */
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function render() {
+  document.getElementById("creatorTable").innerHTML =
+    creators.map(c =>
+      `<tr>
+        <td>${escapeHTML(c.name)}</td>
+        <td>${escapeHTML(c.tiktok)}</td>
+        <td>${escapeHTML(c.country)}</td>
+      </tr>`
+    ).join("");
+
+  document.getElementById("managerTable").innerHTML =
+    managers.map(m =>
+      `<tr>
+        <td>${escapeHTML(m.name)}</td>
+        <td>${escapeHTML(m.email)}</td>
+      </tr>`
+    ).join("");
+
+  document.getElementById("matchTable").innerHTML =
+    matches.map(m =>
+      `<tr>
+        <td>${escapeHTML(m.creator)}</td>
+        <td>${escapeHTML(m.opponent)}</td>
+        <td>${escapeHTML(m.date.replace("T", " "))}</td>
+        <td>${escapeHTML(m.status)}</td>
+      </tr>`
+    ).join("");
+
+  document.getElementById("creatorCount").textContent = creators.length;
+  document.getElementById("managerCount").textContent = managers.length;
+  document.getElementById("matchCount").textContent = matches.length;
+
+  document.getElementById("statCreators").textContent = creators.length;
+  document.getElementById("statManagers").textContent = managers.length;
+  document.getElementById("statMatches").textContent = matches.length;
+
+  document.getElementById("statConfirmed").textContent =
+    matches.filter(m =>
+      m.status === "Confirmat" || m.status === "Programat"
+    ).length;
+}
+
+/* VORTYX AI - VERIFICARE */
+async function testAIConnection() {
+  const status = document.getElementById("ai-status");
+
+  try {
+    const response = await fetch(
+      "https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/health"
+    );
+
+    if (!response.ok) throw new Error("Worker indisponibil");
+
+    const result = await response.json();
+
+    if (result.status === "online" && result.ai) {
+      status.textContent = "Conectat la VORTYX AI";
+      status.style.color = "#70f4ad";
+    } else {
+      throw new Error("AI nu este disponibil");
+    }
+  } catch (error) {
+    status.textContent = "Conexiune indisponibilă";
+    status.style.color = "#ff7777";
+  }
+}
+
+/* VORTYX AI - CHAT */
+function addChatMessage(text, type) {
+  const chat = document.getElementById("ai-chat");
+  const message = document.createElement("div");
+
+  message.className = "chat-message " +
+    (type === "user" ? "chat-user" :
+     type === "ai" ? "chat-ai" : "chat-system");
+
+  message.textContent = text;
+  chat.appendChild(message);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById("ai-message");
+  const button = document.getElementById("ai-send");
+
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  input.value = "";
+  input.disabled = true;
+  button.disabled = true;
+
+  addChatMessage(message, "user");
+  addChatMessage("VORTYX AI pregătește răspunsul...", "system");
+
+  const chat = document.getElementById("ai-chat");
+  const loadingMessage = chat.lastElementChild;
+
+  try {
+    const response = await fetch(VORTYX_AI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
+
+    const result = await response.json();
+
+    loadingMessage.remove();
+
+    if (!response.ok || !result.ok || !result.answer) {
+      throw new Error(result.error || "Serviciul AI nu a răspuns.");
+    }
+
+    addChatMessage(result.answer, "ai");
+
+  } catch (error) {
+    loadingMessage.remove();
+
+    addChatMessage(
+      "Nu am putut contacta VORTYX AI. Verifică conexiunea și încearcă din nou. Detalii: " +
+      error.message,
+      "system"
+    );
+  } finally {
+    input.disabled = false;
+    button.disabled = false;
+    input.focus();
+  }
+}
+
+/* PORNIRE APLICAȚIE */
+render();
+vxCheckSession();
 </script>
 
 </body>
