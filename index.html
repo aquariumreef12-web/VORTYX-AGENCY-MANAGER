@@ -232,7 +232,7 @@ header{padding:15px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://ujtqbksmdzgllhxrznrc.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+const SUPABASE_KEY="sb_publishable_KNs6EChUczb73DkIPDYsLg_ucOZveRY";
 const VORTYX_AI_URL="https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
 const VORTYX_APP_URL="https://aquariumreef12-web.github.io/VORTYX-AGENCY-MANAGER/";
 
@@ -319,10 +319,7 @@ msg("vx-password-message","Parolă schimbată. Te poți autentifica.");
 await db.auth.signOut();
 }
 
-/* CREATORI
-   Maparea coloanelor trebuie adaptată la schema reală.
-   Nu se fac INSERT/UPDATE cu nume de coloane presupuse.
-*/
+/* CREATORI */
 async function loadCreators(){
 const {data,error}=await db.from("creators").select("*").limit(500);
 if(error){
@@ -350,9 +347,6 @@ if(!name||!tiktok)return msg("creatorMessage","Completează numele și username-
 if(!currentUser)return msg("creatorMessage","Sesiune expirată.");
 el("creatorSave").disabled=true;
 msg("creatorMessage","Se încearcă salvarea...");
-/* Coloane candidate folosite doar dacă sunt prezente în datele tabelului.
-   Pentru tabel gol, nu se poate deduce schema prin SELECT.
-*/
 const sample=creators[0]||{};
 const candidates={
 full_name:name,
@@ -397,7 +391,7 @@ managers=(data||[]).filter(x=>["manager","administrator","admin"].includes(Strin
 render();
 }
 
-/* MATCH-URI: momentan în memorie, nu modifică tabelele existente */
+/* MATCH-URI: momentan în memorie */
 function addMatch(){
 const creator=el("matchCreator").value.trim();
 const opponent=el("matchOpponent").value.trim();
