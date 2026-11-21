@@ -375,9 +375,9 @@ function showPage(id, button) {
 /* PROFIL UTILIZATOR */
 async function getUserProfile(userId) {
   return await vxSupabase
-    .from("profiles")
+    .from("user_roles")
     .select("role")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .single();
 }
 
