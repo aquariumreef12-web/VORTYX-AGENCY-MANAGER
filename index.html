@@ -143,8 +143,10 @@ footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
 <div id="vx-new-password">
   <div class="login-box">
     <h2 style="color:#b66aff">VORTYX - PAROLĂ NOUĂ</h2>
+    <p class="subtitle">Introdu o parolă nouă pentru contul tău.</p>
     <input id="vx-new-pass" type="password" placeholder="Introdu parola nouă">
     <button class="btn" onclick="vxSaveNewPassword()">SALVEAZĂ PAROLA</button>
+    <p id="vx-password-message" class="subtitle"></p>
   </div>
 </div>
 
@@ -271,7 +273,7 @@ footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
   </div>
 </section>
 
-<!-- AI CHAT -->
+<!-- VORTYX AI -->
 <section id="telegram" class="page">
   <h1>VORTYX AI</h1>
   <p class="subtitle">Asistentul inteligent VORTYX INTERNATIONAL</p>
@@ -301,8 +303,8 @@ footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
 
   <div class="section">
     <h2>Înscriere creatori</h2>
-    <p>România: <a href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" style="color:#b66aff">Link înscriere România</a></p>
-    <p>Germania: <a href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" style="color:#b66aff">Link înscriere Germania</a></p>
+    <p>România: <a href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" rel="noopener" style="color:#b66aff">Link înscriere România</a></p>
+    <p>Germania: <a href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" rel="noopener" style="color:#b66aff">Link înscriere Germania</a></p>
   </div>
 </section>
 
@@ -310,7 +312,7 @@ footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
   <h1>Setări</h1>
   <div class="section">
     <h2>VORTYX AGENCY Manager</h2>
-    <p>Versiune: 2.0</p>
+    <p>Versiune: 2.1</p>
     <p>Interfață: Black / Neon Purple</p>
     <p>Platformă: Web / Mobile</p>
     <p class="tag">Cloudflare AI: integrat</p>
@@ -331,10 +333,9 @@ footer{color:#655c74;text-align:center;padding:25px;font-size:11px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* CONFIGURARE SUPABASE */
+/* SUPABASE CONFIG */
 const SUPABASE_URL = "https://ujtqbksmdzgllhxrznrc.supabase.co";
 
-/* Cheia publică anon a proiectului Supabase */
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
 
 const vxSupabase = window.supabase.createClient(
@@ -342,9 +343,13 @@ const vxSupabase = window.supabase.createClient(
   SUPABASE_KEY
 );
 
-/* CONFIGURARE VORTYX AI */
+/* VORTYX AI CONFIG */
 const VORTYX_AI_URL =
   "https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
+
+/* REDIRECT URL CORECT */
+const VORTYX_APP_URL =
+  "https://aquariumreef12-web.github.io/VORTYX-AGENCY-MANAGER/";
 
 const creators = [];
 const managers = [];
@@ -367,7 +372,7 @@ function showPage(id, button) {
   button.classList.add("active");
 }
 
-/* AUTENTIFICARE */
+/* PROFIL UTILIZATOR */
 async function getUserProfile(userId) {
   return await vxSupabase
     .from("profiles")
@@ -376,6 +381,7 @@ async function getUserProfile(userId) {
     .single();
 }
 
+/* LOGIN */
 async function vxLogin() {
   const email = document.getElementById("vx-email").value.trim();
   const password = document.getElementById("vx-password").value;
@@ -418,6 +424,7 @@ async function vxLogin() {
   await showApplication(role);
 }
 
+/* AFIȘARE APLICAȚIE */
 async function showApplication(role) {
   currentRole = role;
 
@@ -431,6 +438,7 @@ async function showApplication(role) {
   await testAIConnection();
 }
 
+/* VERIFICARE SESIUNE */
 async function vxCheckSession() {
   const { data, error } = await vxSupabase.auth.getSession();
 
@@ -462,32 +470,38 @@ async function vxCheckSession() {
   await showApplication(role);
 }
 
+/* LOGOUT */
 async function vxLogout() {
   await vxSupabase.auth.signOut();
   location.reload();
 }
 
-/* RESETARE PAROLA */
+/* RESETARE PAROLĂ */
 async function vxResetPassword() {
   const email = document.getElementById("vx-email").value.trim();
+  const message = document.getElementById("vx-login-message");
 
   if (!email) {
-    alert("Introdu emailul contului.");
+    message.textContent = "Introdu emailul contului.";
     return;
   }
 
+  message.textContent = "Se trimite emailul de resetare...";
+
   const { error } = await vxSupabase.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://aquariumreef12-web.github.io/"
+    redirectTo: VORTYX_APP_URL
   });
 
   if (error) {
-    alert("Eroare: " + error.message);
+    message.textContent = "Eroare: " + error.message;
     return;
   }
 
-  alert("Linkul de resetare a fost trimis pe email.");
+  message.textContent =
+    "Email trimis. Verifică Inbox și Spam.";
 }
 
+/* DETECTARE RECUPERARE PAROLĂ */
 vxSupabase.auth.onAuthStateChange((event, session) => {
   if (event === "PASSWORD_RECOVERY" && session) {
     document.getElementById("vx-login").style.display = "none";
@@ -496,24 +510,34 @@ vxSupabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
+/* SALVARE PAROLĂ NOUĂ */
 async function vxSaveNewPassword() {
   const password = document.getElementById("vx-new-pass").value;
+  const message = document.getElementById("vx-password-message");
 
   if (password.length < 8) {
-    alert("Parola trebuie să aibă minimum 8 caractere.");
+    message.textContent = "Parola trebuie să aibă minimum 8 caractere.";
     return;
   }
 
-  const { error } = await vxSupabase.auth.updateUser({ password });
+  message.textContent = "Se salvează parola...";
+
+  const { error } = await vxSupabase.auth.updateUser({
+    password: password
+  });
 
   if (error) {
-    alert("Eroare: " + error.message);
+    message.textContent = "Eroare: " + error.message;
     return;
   }
 
-  alert("Parola a fost schimbată.");
+  message.textContent = "Parola a fost schimbată cu succes.";
+
   await vxSupabase.auth.signOut();
-  location.reload();
+
+  setTimeout(() => {
+    location.href = VORTYX_APP_URL;
+  }, 1500);
 }
 
 /* CREATORI */
@@ -566,10 +590,15 @@ function addMatch() {
   }
 
   matches.push({ creator, opponent, date, status });
+
+  document.getElementById("matchCreator").value = "";
+  document.getElementById("matchOpponent").value = "";
+  document.getElementById("matchDate").value = "";
+
   render();
 }
 
-/* AFIȘARE DATE */
+/* PROTEJARE TEXT HTML */
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -580,6 +609,7 @@ function escapeHTML(value) {
   })[char]);
 }
 
+/* AFIȘARE DATE */
 function render() {
   document.getElementById("creatorTable").innerHTML =
     creators.map(c =>
@@ -622,7 +652,7 @@ function render() {
     ).length;
 }
 
-/* VORTYX AI - VERIFICARE */
+/* TEST CONEXIUNE AI */
 async function testAIConnection() {
   const status = document.getElementById("ai-status");
 
@@ -647,7 +677,7 @@ async function testAIConnection() {
   }
 }
 
-/* VORTYX AI - CHAT */
+/* MESAJ CHAT */
 function addChatMessage(text, type) {
   const chat = document.getElementById("ai-chat");
   const message = document.createElement("div");
@@ -661,6 +691,7 @@ function addChatMessage(text, type) {
   chat.scrollTop = chat.scrollHeight;
 }
 
+/* TRIMITERE MESAJ AI */
 async function sendAIMessage() {
   const input = document.getElementById("ai-message");
   const button = document.getElementById("ai-send");
