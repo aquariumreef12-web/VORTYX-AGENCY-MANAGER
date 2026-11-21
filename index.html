@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VORTYX AGENCY Manager</title>
+
 <style>
 :root{
 --bg:#090811;--panel:#151222;--purple:#852cff;
@@ -34,6 +35,7 @@ input,select,textarea{width:100%;background:#0e0b17;border:1px solid var(--borde
 .btn{background:var(--purple);color:white;border:0;padding:11px 16px;border-radius:8px;cursor:pointer;font-weight:bold}
 .btn:hover{background:#a04dff}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#302344}
 .page{display:none}.page.active{display:block}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:12px 8px;text-align:left;border-bottom:1px solid var(--border)}
@@ -53,6 +55,8 @@ th{color:#b995e7}
 #vx-app{display:none}
 #vx-user-panel{position:fixed;bottom:10px;right:10px;background:#20132e;padding:10px;border-radius:8px;z-index:1000}
 footer{text-align:center;color:#655c74;padding:24px;font-size:11px}
+.import-help{font-size:12px;color:var(--muted);line-height:1.6}
+.import-result{white-space:pre-wrap;font-size:13px;line-height:1.5}
 @media(max-width:750px){
 .layout{display:block}
 nav{width:100%;display:flex;overflow-x:auto;padding:8px}
@@ -64,6 +68,7 @@ header{padding:15px}
 @media(max-width:400px){.cards{grid-template-columns:1fr}}
 </style>
 </head>
+
 <body>
 
 <div id="vx-login">
@@ -150,6 +155,29 @@ header{padding:15px}
 
 <button class="btn" id="creatorSave" onclick="addCreator()">SALVEAZĂ CREATOR</button>
 <p id="creatorMessage" class="subtitle"></p>
+</div>
+
+<!-- IMPORT EXCEL / LISTĂ -->
+<div class="section">
+<h2>Import creatori din Excel</h2>
+<p class="import-help">
+Încarcă un fișier XLS/XLSX sau lipește direct rândurile copiate din Excel.
+Coloanele trebuie să fie în ordinea:
+<br>
+<strong>Username | Status | Tip | Coloană 4 | DA/NU | DA/NU | Data | Valoare</strong>
+<br>
+Creatorii importați nu vor avea manager repartizat.
+</p>
+
+<label class="subtitle">Selectează fișier Excel</label>
+<input type="file" id="creatorExcelFile" accept=".xls,.xlsx,.csv">
+
+<label class="subtitle">Sau lipește rândurile aici</label>
+<textarea id="creatorImportText" rows="7" placeholder="username&#9;Available&#9;Regular&#9;&#9;DA&#9;NU&#9;2026-06-06 22:05:20&#9;2"></textarea>
+
+<button class="btn" id="creatorImportButton" onclick="importCreators()">IMPORTĂ CREATORII</button>
+<button class="btn btn-secondary" onclick="clearImport()">ȘTERGE DATELE</button>
+<p id="creatorImportMessage" class="import-result subtitle"></p>
 </div>
 
 <div class="section">
@@ -244,7 +272,7 @@ header{padding:15px}
 <h1>Setări</h1>
 <div class="section">
 <h2>VORTYX AGENCY Manager</h2>
-<p>Versiune: 4.0</p>
+<p>Versiune: 5.0</p>
 <p>Interfață: Black / Neon Purple</p>
 <p>Platformă: Web / Mobile</p>
 <p class="tag">Cloudflare AI integrat</p>
@@ -263,11 +291,11 @@ header{padding:15px}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <script>
 /* CONFIGURARE */
 const SUPABASE_URL="https://ujtqbksmdzgllhxrznrc.supabase.co";
-
-/* Cheia publică JWT anon a proiectului tău */
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
 
 const VORTYX_AI_URL="https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
@@ -393,10 +421,7 @@ const {error}=await db.auth.resetPasswordForEmail(email,{
 redirectTo:VORTYX_APP_URL
 });
 
-msg(
-"vx-login-message",
-error?"Eroare: "+error.message:"Email de resetare trimis. Verifică Inbox și Spam."
-);
+msg("vx-login-message",error?"Eroare: "+error.message:"Email de resetare trimis. Verifică Inbox și Spam.");
 }
 
 db.auth.onAuthStateChange((event,session)=>{
@@ -437,9 +462,7 @@ return;
 }
 
 managers=(data||[]).filter(m=>
-["manager","administrator","admin"].includes(
-String(m.role||"").toLowerCase()
-)
+["manager","administrator","admin"].includes(String(m.role||"").toLowerCase())
 );
 
 renderManagers();
@@ -448,12 +471,9 @@ render();
 }
 
 function renderManagers(){
-el("managerTable").innerHTML=managers.map(m=>{
-return `<tr>
-<td>${escapeHTML(m.id)}</td>
-<td>${escapeHTML(m.role)}</td>
-</tr>`;
-}).join("")||'<tr><td colspan="2">Nu există manageri.</td></tr>';
+el("managerTable").innerHTML=managers.map(m=>
+`<tr><td>${escapeHTML(m.id)}</td><td>${escapeHTML(m.role)}</td></tr>`
+).join("")||'<tr><td colspan="2">Nu există manageri.</td></tr>';
 }
 
 function updateManagerSelect(){
@@ -489,7 +509,6 @@ status:row.status??""
 async function loadCreators(){
 let query=db.from("creators").select("*").limit(500);
 
-/* Managerul vede doar creatorii repartizați lui */
 if(currentRole==="manager"){
 query=query.eq("manager_id",currentUser.id);
 }
@@ -538,12 +557,6 @@ managerId=el("creatorManager").value||null;
 el("creatorSave").disabled=true;
 msg("creatorMessage","Se salvează creatorul...");
 
-/*
-Coloanele sunt trimise explicit.
-country_id este codul țării (RO/DE).
-Dacă în baza ta country_id este UUID cu relație,
-va trebui folosit ID-ul corespunzător din tabelul de țări.
-*/
 const payload={
 full_name:name,
 tiktok_username:tiktok,
@@ -558,26 +571,213 @@ country:country,
 role:"creator"
 };
 
-const {data,error}=await db.from("creators")
-.insert(payload)
-.select()
-.single();
+const {error}=await db.from("creators").insert(payload);
 
 if(error){
 msg("creatorMessage","Eroare la salvare: "+error.message);
-console.error("Supabase insert error:",error);
+console.error(error);
 }else{
 el("creatorName").value="";
 el("creatorTikTok").value="";
 el("creatorUrl").value="";
 el("creatorWhatsapp").value="";
 el("creatorManager").value="";
-
 msg("creatorMessage","Creator salvat cu succes.");
 await loadCreators();
 }
 
 el("creatorSave").disabled=false;
+}
+
+/* IMPORT CREATORI */
+function clearImport(){
+el("creatorExcelFile").value="";
+el("creatorImportText").value="";
+msg("creatorImportMessage","");
+}
+
+function parseImportDate(value){
+if(value instanceof Date && !isNaN(value)){
+return value.toISOString();
+}
+
+if(typeof value==="number" && window.XLSX){
+const parsed=XLSX.SSF.parse_date_code(value);
+if(parsed){
+return new Date(Date.UTC(parsed.y,parsed.m-1,parsed.d,parsed.H,parsed.M,parsed.S)).toISOString();
+}
+}
+
+if(!value){
+return new Date().toISOString();
+}
+
+const text=String(value).trim();
+const match=text.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/);
+
+if(match){
+return new Date(Date.UTC(
+Number(match[1]),Number(match[2])-1,Number(match[3]),
+Number(match[4]||0),Number(match[5]||0),Number(match[6]||0)
+)).toISOString();
+}
+
+const date=new Date(text);
+return isNaN(date)?new Date().toISOString():date.toISOString();
+}
+
+function normalizeImportRow(row){
+const username=String(row[0]??"").trim().replace(/^@/,"");
+if(!username)return null;
+
+return {
+username,
+status:String(row[1]??"Available").trim()||"Available",
+category:String(row[2]??"Regular").trim()||"Regular",
+extra4:String(row[3]??"").trim(),
+flag1:String(row[4]??"").trim(),
+flag2:String(row[5]??"").trim(),
+sourceDate:row[6]??"",
+value:row[7]??""
+};
+}
+
+function parsePastedRows(text){
+return text.split(/\r?\n/)
+.filter(line=>line.trim())
+.map(line=>normalizeImportRow(line.split("\t")));
+}
+
+async function readExcelFile(file){
+if(!file)return [];
+
+if(!window.XLSX){
+throw new Error("Biblioteca Excel nu s-a încărcat. Reîncarcă pagina.");
+}
+
+const buffer=await file.arrayBuffer();
+const workbook=XLSX.read(buffer,{type:"array",cellDates:true});
+const sheet=workbook.Sheets[workbook.SheetNames[0]];
+
+if(!sheet)throw new Error("Fișierul Excel nu conține o foaie de calcul.");
+
+const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});
+
+return rows
+.filter(row=>row.some(cell=>String(cell??"").trim()!==""))
+.map(normalizeImportRow)
+.filter(Boolean);
+}
+
+async function importCreators(){
+if(!isAdmin()){
+return msg("creatorImportMessage","Doar administratorul poate importa creatori.");
+}
+
+const button=el("creatorImportButton");
+const file=el("creatorExcelFile").files[0];
+const pasted=el("creatorImportText").value.trim();
+
+if(!file&&!pasted){
+return msg("creatorImportMessage","Alege un fișier Excel sau lipește rândurile.");
+}
+
+button.disabled=true;
+msg("creatorImportMessage","Se pregătește importul...");
+
+try{
+let rows=file?await readExcelFile(file):parsePastedRows(pasted);
+
+if(!rows.length){
+throw new Error("Nu am găsit rânduri valide în listă.");
+}
+
+/* Elimină username-urile repetate chiar din fișierul importat */
+const uniqueRows=[];
+const seen=new Set();
+
+for(const row of rows){
+const key=row.username.toLowerCase();
+if(!seen.has(key)){
+seen.add(key);
+uniqueRows.push(row);
+}
+}
+
+/* Verifică username-urile existente în Supabase */
+const {data:existing,error:existingError}=await db
+.from("creators")
+.select("tiktok_username");
+
+if(existingError){
+throw new Error("Nu pot verifica duplicatele: "+existingError.message);
+}
+
+const existingSet=new Set(
+(existing||[]).map(row=>String(row.tiktok_username||"").toLowerCase())
+);
+
+const newRows=uniqueRows.filter(row=>!existingSet.has(row.username.toLowerCase()));
+const duplicateCount=uniqueRows.length-newRows.length;
+
+if(!newRows.length){
+msg("creatorImportMessage",
+"Import încheiat. Toți cei "+uniqueRows.length+" creatori există deja. Nu s-au introdus duplicate."
+);
+return;
+}
+
+/* Managerul rămâne NULL. Datele suplimentare sunt păstrate în import_metadata. */
+const payload=newRows.map(row=>({
+full_name:row.username,
+tiktok_username:row.username,
+tiktok_url:"https://www.tiktok.com/@"+encodeURIComponent(row.username),
+whatsapp:null,
+country_id:null,
+manager_id:null,
+language:null,
+status:row.status,
+created_at:parseImportDate(row.sourceDate),
+country:null,
+role:"creator",
+import_metadata:{
+category:row.category,
+extra_column_4:row.extra4,
+flag_1:row.flag1,
+flag_2:row.flag2,
+source_date:String(row.sourceDate??""),
+value:row.value
+}
+}));
+
+msg("creatorImportMessage","Se salvează "+payload.length+" creatori în Supabase...");
+
+const {error:insertError}=await db.from("creators").insert(payload);
+
+if(insertError){
+throw new Error("Supabase: "+insertError.message);
+}
+
+await loadCreators();
+
+msg("creatorImportMessage",
+"IMPORT FINALIZAT\n"+
+"Creatori identificați: "+uniqueRows.length+"\n"+
+"Creatori importați: "+payload.length+"\n"+
+"Duplicate ignorate: "+duplicateCount+"\n"+
+"Manager repartizat: niciunul\n\n"+
+"Toți creatorii importați au manager_id = NULL."
+);
+
+el("creatorImportText").value="";
+el("creatorExcelFile").value="";
+
+}catch(error){
+console.error("Import error:",error);
+msg("creatorImportMessage","EROARE LA IMPORT:\n"+error.message);
+}finally{
+button.disabled=false;
+}
 }
 
 /* MATCH-URI */
@@ -633,7 +833,6 @@ String(m.role).toLowerCase()==="manager"
 ).length;
 
 el("matchCount").textContent=matches.length;
-
 el("statCreators").textContent=creators.length;
 el("statManagers").textContent=managers.filter(m=>
 String(m.role).toLowerCase()==="manager"
@@ -708,7 +907,6 @@ addChatMessage(result.answer,"ai");
 }catch(error){
 loading.remove();
 addChatMessage("Eroare VORTYX AI: "+error.message,"system");
-
 }finally{
 input.disabled=false;
 button.disabled=false;
