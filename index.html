@@ -44,8 +44,8 @@ h1{font-size:25px;margin:0}h2{font-size:19px;margin-top:0}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
 .toolbar>*{flex:1;min-width:140px}
 .table-wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:760px}
-th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+table{border-collapse:collapse;width:100%;min-width:1000px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
 th{color:var(--neon);font-weight:700}
 tr:hover td{background:#ffffff05}
 .empty{text-align:center;color:var(--muted);padding:25px}
@@ -60,6 +60,9 @@ tr:hover td{background:#ffffff05}
 .progress{height:8px;background:#302443;border-radius:10px;overflow:hidden}
 .progress div{height:100%;background:var(--neon)}
 .ai-answer{white-space:pre-wrap;background:#0e0b18;padding:15px;border-radius:9px;min-height:90px;color:#e8dafa}
+.muted{color:var(--muted)}
+.manager-name-input{min-width:180px;max-width:260px}
+.small-note{font-size:12px;color:var(--muted);margin-top:7px}
 @media(max-width:800px){
 .sidebar{width:100%;height:auto;bottom:auto;position:relative;padding:12px}
 .brand{padding:5px 8px 12px}
@@ -117,17 +120,30 @@ tr:hover td{background:#ffffff05}
 <section id="creators" class="section">
 <div class="panel">
 <h2>Lista creatorilor</h2>
-<p class="muted">Lista este comună tuturor managerilor. Bifa de contactare este salvată în Supabase și vizibilă întregii echipe.</p>
+<p class="muted">Lista este comună tuturor managerilor. Contactarea, managerul care a contactat și data/ora sunt salvate în Supabase.</p>
 <div class="toolbar">
 <input id="creatorSearch" placeholder="Caută creator..." oninput="renderCreators()">
 <select id="contactFilter" onchange="renderCreators()">
-<option value="all">Toți creatorii</option><option value="pending">De contactat</option><option value="contacted">Contactați</option>
+<option value="all">Toți creatorii</option>
+<option value="pending">De contactat</option>
+<option value="contacted">Contactați</option>
+</select>
+<select id="countryFilter" onchange="renderCreators()">
+<option value="all">Toate țările</option>
+<option value="RO">România</option>
+<option value="DE">Germania</option>
+</select>
+<select id="contactedByFilter" onchange="renderCreators()">
+<option value="all">Toți managerii care au contactat</option>
 </select>
 <button onclick="loadCreators()">Reîncarcă</button>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>Nume</th><th>TikTok</th><th>Țară</th><th>Manager</th><th>Status</th><th>Contactare</th></tr></thead>
-<tbody id="creatorTable"><tr><td colspan="6" class="empty">Se încarcă...</td></tr></tbody>
+<thead><tr>
+<th>Nume</th><th>TikTok</th><th>Țară</th><th>Manager asignat</th>
+<th>Status</th><th>Contactare</th><th>Contactat de</th><th>Data contactării</th>
+</tr></thead>
+<tbody id="creatorTable"><tr><td colspan="8" class="empty">Se încarcă...</td></tr></tbody>
 </table></div>
 <div id="creatorMessage" class="message"></div>
 </div>
@@ -148,7 +164,20 @@ tr:hover td{background:#ffffff05}
 <div class="panel" id="importPanel">
 <h2>Import creatori Excel / CSV</h2>
 <p class="muted">Prima coloană trebuie să conțină username-ul TikTok. Creatorii importați rămân fără manager, pentru repartizare manuală.</p>
+<div class="form-grid">
+<div class="field">
+<label>Țara creatorilor din fișier</label>
+<select id="importCountry">
+<option value="">Selectează țara înainte de import</option>
+<option value="RO">România (RO)</option>
+<option value="DE">Germania (DE)</option>
+</select>
+</div>
+<div class="field">
+<label>Fișier Excel / CSV</label>
 <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
+</div>
+</div>
 <button onclick="importCreators()" style="margin-top:12px">Importă fișierul</button>
 <div id="importMessage" class="message"></div>
 </div>
@@ -170,8 +199,13 @@ tr:hover td{background:#ffffff05}
 </section>
 
 <section id="managers" class="section">
-<div class="panel"><h2>Manageri</h2><p class="muted">Conturile se creează din Supabase Authentication, apoi se adaugă în user_roles cu rolul manager.</p>
-<div class="table-wrap"><table><thead><tr><th>ID utilizator</th><th>Rol</th></tr></thead><tbody id="managerTable"></tbody></table></div>
+<div class="panel">
+<h2>Manageri</h2>
+<p class="muted">Conturile se creează din Supabase Authentication, apoi se adaugă în user_roles cu rolul manager. Administratorul poate configura numele afișat în aplicație.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Nume afișat</th><th>Rol</th><th>Acțiune</th></tr></thead>
+<tbody id="managerTable"></tbody>
+</table></div>
 <div id="managerMessage" class="message"></div>
 </div>
 </section>
@@ -197,8 +231,8 @@ tr:hover td{background:#ffffff05}
 <section id="settings" class="section">
 <div class="panel"><h2>Setări cont</h2><p id="settingsEmail" class="muted"></p><button class="secondary" onclick="changePassword()">Schimbă parola</button></div>
 <div class="panel"><h2>Linkuri de înscriere VORTYX</h2>
-<p>România: <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank">Înscriere România</a></p>
-<p>Germania: <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank">Înscriere Germania</a></p>
+<p>România: <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" rel="noopener">Înscriere România</a></p>
+<p>Germania: <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" rel="noopener">Înscriere Germania</a></p>
 </div>
 </section>
 </main>
@@ -206,7 +240,7 @@ tr:hover td{background:#ffffff05}
 
 <script>
 const SUPABASE_URL="https://ujtqbksmdzgllhxrznrc.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdGZia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
 const AI_URL="https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
@@ -220,6 +254,30 @@ function esc(v){
  return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function normalizeUsername(v){return String(v||"").trim().replace(/^@/,"").replace(/\s/g,"")}
+function isAdmin(){return currentRole==="admin"||currentRole==="administrator"}
+function normalizeCountry(value){
+ const v=String(value??"").trim().toUpperCase();
+ if(["RO","ROMANIA","ROMÂNIA"].includes(v))return "RO";
+ if(["DE","GERMANY","GERMANIA","DEUTSCHLAND"].includes(v))return "DE";
+ return v||"—";
+}
+function countryLabel(value){
+ const c=normalizeCountry(value);
+ if(c==="RO")return "România";
+ if(c==="DE")return "Germania";
+ return c;
+}
+function managerName(id){
+ if(!id)return "Fără manager";
+ const manager=managers.find(m=>String(m.id)===String(id));
+ return manager?.display_name||"Nume neconfigurat";
+}
+function formatDate(value){
+ if(!value)return "—";
+ const date=new Date(value);
+ if(Number.isNaN(date.getTime()))return "—";
+ return date.toLocaleString("ro-RO",{dateStyle:"short",timeStyle:"short"});
+}
 
 async function login(){
  msg("loginMessage","Se verifică...");
@@ -239,131 +297,371 @@ async function logout(){await db.auth.signOut();location.reload()}
 
 async function checkSession(){
  const {data,error}=await db.auth.getSession();
- if(error||!data.session){document.getElementById("loginScreen").style.display="flex";document.getElementById("app").style.display="none";return}
+ if(error||!data.session){
+  document.getElementById("loginScreen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  return;
+ }
  currentUser=data.session.user;
  const {data:roleData,error:roleError}=await db.from("user_roles").select("id,role").eq("id",currentUser.id).maybeSingle();
- if(roleError||!roleData){await db.auth.signOut();msg("loginMessage","Contul nu are rol configurat în user_roles.",true);return}
+ if(roleError||!roleData){
+  await db.auth.signOut();
+  msg("loginMessage","Contul nu are rol configurat în user_roles.",true);
+  return;
+ }
  currentRole=String(roleData.role||"").toLowerCase();
- if(!["administrator","admin","manager"].includes(currentRole)){await db.auth.signOut();msg("loginMessage","Nu ai acces la aplicație.",true);return}
+ if(!["administrator","admin","manager"].includes(currentRole)){
+  await db.auth.signOut();
+  msg("loginMessage","Nu ai acces la aplicație.",true);
+  return;
+ }
  document.getElementById("loginScreen").style.display="none";
  document.getElementById("app").style.display="block";
  document.getElementById("userInfo").textContent=currentUser.email;
  document.getElementById("settingsEmail").textContent=currentUser.email;
  document.getElementById("roleLabel").textContent=currentRole.toUpperCase();
  if(currentRole==="manager"){
-   document.getElementById("addCreatorPanel").classList.add("hidden");
-   document.getElementById("importPanel").classList.add("hidden");
+  document.getElementById("addCreatorPanel").classList.add("hidden");
+  document.getElementById("importPanel").classList.add("hidden");
  }
  await loadAll();
 }
+
 async function loadAll(){
- await Promise.all([loadCreators(),loadManagers()]);
- refreshDashboard();populateCreatorSelects();
+ await loadManagers();
+ await loadCreators();
+ refreshDashboard();
+ populateCreatorSelects();
 }
+
 async function loadCreators(){
  const {data,error}=await db.from("creators").select("*").order("created_at",{ascending:false}).limit(1000);
- if(error){msg("creatorMessage","Eroare la încărcare: "+error.message,true);console.error(error);return}
- creators=data||[];renderCreators();refreshDashboard();populateCreatorSelects();
+ if(error){
+  msg("creatorMessage","Eroare la încărcare: "+error.message,true);
+  console.error(error);
+  return;
+ }
+ creators=data||[];
+ renderCreators();
+ refreshDashboard();
+ populateCreatorSelects();
 }
+
 function creatorData(row){
- return {id:row.id,name:row.full_name||row.tiktok_username||"Fără nume",
- tiktok:normalizeUsername(row.tiktok_username||""),country:row.country||row.country_id||"—",
- manager:row.manager_id||"",status:row.status||"Available",contacted:row.contacted===true}
+ return {
+  id:row.id,
+  name:row.full_name||row.tiktok_username||"Fără nume",
+  tiktok:normalizeUsername(row.tiktok_username||""),
+  country:normalizeCountry(row.country||row.country_id),
+  manager:row.manager_id||"",
+  status:row.status||"Available",
+  contacted:row.contacted===true,
+  contactedBy:row.contacted_by||null,
+  contactedAt:row.contacted_at||null
+ };
 }
+
 function renderCreators(){
  const search=(document.getElementById("creatorSearch")?.value||"").toLowerCase();
  const filter=document.getElementById("contactFilter")?.value||"all";
+ const countryFilter=document.getElementById("countryFilter")?.value||"all";
+ const contactedByFilter=document.getElementById("contactedByFilter")?.value||"all";
+
  const list=creators.filter(row=>{
   const c=creatorData(row);
-  const matchSearch=(c.name+" "+c.tiktok+" "+c.country).toLowerCase().includes(search);
+  const matchSearch=(c.name+" "+c.tiktok+" "+c.country+" "+managerName(c.manager)).toLowerCase().includes(search);
   const matchFilter=filter==="all"||(filter==="contacted"&&c.contacted)||(filter==="pending"&&!c.contacted);
-  return matchSearch&&matchFilter;
+  const matchCountry=countryFilter==="all"||c.country===countryFilter;
+  const matchContactedBy=contactedByFilter==="all"||String(c.contactedBy||"")===contactedByFilter;
+  return matchSearch&&matchFilter&&matchCountry&&matchContactedBy;
  });
+
  document.getElementById("creatorTable").innerHTML=list.map(row=>{
-  const c=creatorData(row),manager=managers.find(m=>m.id===c.manager);
+  const c=creatorData(row);
+  const contactedManager=c.contactedBy?managerName(c.contactedBy):"—";
+  const contactDate=c.contactedAt?formatDate(c.contactedAt):(c.contacted?"Istoric indisponibil":"—");
+
   return `<tr>
   <td>${esc(c.name)}</td>
-  <td>${c.tiktok?`<a style="color:var(--neon)" target="_blank" href="https://www.tiktok.com/@${encodeURIComponent(c.tiktok)}">@${esc(c.tiktok)}</a>`:"—"}</td>
-  <td>${esc(c.country)}</td><td>${esc(manager?manager.id:(c.manager||"—"))}</td>
+  <td>${c.tiktok?`<a style="color:var(--neon)" target="_blank" rel="noopener" href="https://www.tiktok.com/@${encodeURIComponent(c.tiktok)}">@${esc(c.tiktok)}</a>`:"—"}</td>
+  <td>${esc(countryLabel(c.country))}</td>
+  <td>${esc(managerName(c.manager))}</td>
   <td><span class="status">${esc(c.status)}</span></td>
   <td><label class="contact-check ${c.contacted?"contacted":"not-contacted"}">
   <input type="checkbox" ${c.contacted?"checked":""} onchange="updateContacted('${esc(row.id)}',this.checked)">
-  ${c.contacted?"Contactat":"De contactat"}</label></td></tr>`;
- }).join("")||'<tr><td colspan="6" class="empty">Nu există creatori.</td></tr>';
+  ${c.contacted?"Contactat":"De contactat"}</label></td>
+  <td>${esc(contactedManager)}</td>
+  <td>${esc(contactDate)}</td>
+  </tr>`;
+ }).join("")||'<tr><td colspan="8" class="empty">Nu există creatori pentru filtrele selectate.</td></tr>';
 }
+
 async function updateContacted(id,checked){
- const row=creators.find(c=>String(c.id)===String(id));if(!row)return;
- const {error}=await db.from("creators").update({contacted:checked}).eq("id",id);
- if(error){alert("Nu s-a putut salva bifa: "+error.message);renderCreators();return}
- row.contacted=checked;
- msg("creatorMessage",checked?"Creator marcat ca fiind contactat.":"Creator marcat ca necontactat.");
- renderCreators();refreshDashboard();
+ const row=creators.find(c=>String(c.id)===String(id));
+ if(!row)return;
+
+ const payload=checked
+  ?{contacted:true,contacted_by:currentUser.id,contacted_at:new Date().toISOString()}
+  :{contacted:false,contacted_by:null,contacted_at:null};
+
+ const {error}=await db.from("creators").update(payload).eq("id",id);
+ if(error){
+  alert("Nu s-a putut salva contactarea: "+error.message);
+  renderCreators();
+  return;
+ }
+
+ Object.assign(row,payload);
+ msg("creatorMessage",checked
+  ?"Contactarea a fost salvată împreună cu managerul și data/ora."
+  :"Contactarea a fost anulată. Evidența managerului și data au fost șterse.");
+ renderCreators();
+ refreshDashboard();
 }
+
 async function loadManagers(){
  const {data,error}=await db.from("user_roles").select("id,role");
- if(error){msg("managerMessage",error.message,true);return}
- managers=(data||[]).filter(x=>["manager","administrator","admin"].includes(String(x.role).toLowerCase()));
- document.getElementById("managerTable").innerHTML=managers.map(m=>`<tr><td>${esc(m.id)}</td><td>${esc(m.role)}</td></tr>`).join("")||'<tr><td colspan="2" class="empty">Nu există manageri.</td></tr>';
+ if(error){
+  msg("managerMessage","Eroare la încărcarea managerilor: "+error.message,true);
+  return;
+ }
+
+ const roleUsers=(data||[]).filter(x=>["manager","administrator","admin"].includes(String(x.role).toLowerCase()));
+
+ const {data:profiles,error:profileError}=await db.from("manager_profiles").select("manager_id,display_name");
+
+ if(profileError){
+  msg("managerMessage","Nu pot încărca numele managerilor din manager_profiles: "+profileError.message,true);
+  managers=roleUsers.map(x=>({...x,display_name:""}));
+ }else{
+  managers=roleUsers.map(x=>{
+   const profile=(profiles||[]).find(p=>String(p.manager_id)===String(x.id));
+   return {...x,display_name:profile?.display_name||""};
+  });
+ }
+
+ renderManagers();
+ populateManagerFilters();
  document.getElementById("managerCount").textContent=managers.filter(m=>String(m.role).toLowerCase()==="manager").length;
- document.getElementById("newManager").innerHTML='<option value="">Fără manager</option>'+managers.filter(m=>String(m.role).toLowerCase()==="manager").map(m=>`<option value="${esc(m.id)}">${esc(m.id)}</option>`).join("");
+ document.getElementById("newManager").innerHTML=
+  '<option value="">Fără manager</option>'+
+  managers.filter(m=>String(m.role).toLowerCase()==="manager")
+   .map(m=>`<option value="${esc(m.id)}">${esc(m.display_name||"Nume neconfigurat")}</option>`).join("");
+
  renderCreators();
 }
+
+function renderManagers(){
+ const tbody=document.getElementById("managerTable");
+ if(!managers.length){
+  tbody.innerHTML='<tr><td colspan="3" class="empty">Nu există manageri.</td></tr>';
+  return;
+ }
+
+ tbody.innerHTML=managers.map(m=>{
+  const name=m.display_name||"";
+  if(isAdmin()){
+   return `<tr>
+    <td><input class="manager-name-input" id="managerName_${esc(m.id)}" value="${esc(name)}" placeholder="Introdu numele managerului"></td>
+    <td><span class="status">${esc(m.role)}</span></td>
+    <td><button onclick="saveManagerName('${esc(m.id)}')">Salvează</button></td>
+   </tr>`;
+  }
+  return `<tr>
+   <td>${esc(name||"Nume neconfigurat")}</td>
+   <td><span class="status">${esc(m.role)}</span></td>
+   <td>—</td>
+  </tr>`;
+ }).join("");
+}
+
+function populateManagerFilters(){
+ const select=document.getElementById("contactedByFilter");
+ const current=select.value||"all";
+ select.innerHTML='<option value="all">Toți managerii care au contactat</option>'+
+  managers.map(m=>`<option value="${esc(m.id)}">${esc(m.display_name||"Nume neconfigurat")}</option>`).join("");
+ if([...select.options].some(o=>o.value===current))select.value=current;
+}
+
+async function saveManagerName(id){
+ if(!isAdmin()){
+  msg("managerMessage","Doar administratorul poate modifica numele managerilor.",true);
+  return;
+ }
+ const input=document.getElementById("managerName_"+id);
+ const displayName=input?.value.trim()||"";
+ if(!displayName){
+  msg("managerMessage","Introdu un nume pentru manager.",true);
+  return;
+ }
+
+ const {error}=await db.from("manager_profiles").upsert({
+  manager_id:id,
+  display_name:displayName,
+  updated_at:new Date().toISOString()
+ },{onConflict:"manager_id"});
+
+ if(error){
+  msg("managerMessage","Nu s-a putut salva numele: "+error.message,true);
+  return;
+ }
+
+ const manager=managers.find(m=>String(m.id)===String(id));
+ if(manager)manager.display_name=displayName;
+ msg("managerMessage","Numele managerului a fost salvat.");
+ renderManagers();
+ populateManagerFilters();
+ renderCreators();
+}
+
 async function addCreator(){
  const username=normalizeUsername(document.getElementById("newTikTok").value);
  const name=document.getElementById("newName").value.trim()||username;
- if(!username){msg("addMessage","Introdu username-ul TikTok.",true);return}
+ if(!username){
+  msg("addMessage","Introdu username-ul TikTok.",true);
+  return;
+ }
+
  const country=document.getElementById("newCountry").value;
- const payload={full_name:name,tiktok_username:username,tiktok_url:"https://www.tiktok.com/@"+username,
- whatsapp:null,country_id:country,manager_id:document.getElementById("newManager").value||null,
- language:document.getElementById("newLanguage").value,status:document.getElementById("newStatus").value,
- created_at:new Date().toISOString(),country:country,role:"creator",contacted:false};
+ const payload={
+  full_name:name,
+  tiktok_username:username,
+  tiktok_url:"https://www.tiktok.com/@"+username,
+  whatsapp:null,
+  country_id:country,
+  manager_id:document.getElementById("newManager").value||null,
+  language:document.getElementById("newLanguage").value,
+  status:document.getElementById("newStatus").value,
+  created_at:new Date().toISOString(),
+  country:country,
+  role:"creator",
+  contacted:false,
+  contacted_by:null,
+  contacted_at:null
+ };
+
  const {error}=await db.from("creators").insert(payload);
- if(error){msg("addMessage",error.message,true);return}
+ if(error){
+  msg("addMessage",error.message,true);
+  return;
+ }
+
  msg("addMessage","Creator adăugat cu succes.");
- document.getElementById("newName").value="";document.getElementById("newTikTok").value="";
+ document.getElementById("newName").value="";
+ document.getElementById("newTikTok").value="";
  await loadCreators();
 }
+
 async function importCreators(){
  const file=document.getElementById("importFile").files[0];
- if(!file){msg("importMessage","Selectează un fișier.",true);return}
+ const country=document.getElementById("importCountry").value;
+
+ if(!country){
+  msg("importMessage","Selectează țara creatorilor înainte de import.",true);
+  return;
+ }
+ if(!file){
+  msg("importMessage","Selectează un fișier Excel sau CSV.",true);
+  return;
+ }
+
  try{
-  const buffer=await file.arrayBuffer(),workbook=XLSX.read(buffer,{type:"array"});
+  const buffer=await file.arrayBuffer();
+  const workbook=XLSX.read(buffer,{type:"array"});
   const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{header:1,defval:""});
   const existing=new Set(creators.map(c=>normalizeUsername(c.tiktok_username).toLowerCase()));
-  const newRows=[];let duplicates=0;
+  const newRows=[];
+  let duplicates=0;
+
   rows.forEach((r,index)=>{
-   const username=normalizeUsername(r[0]);if(!username)return;
+   const username=normalizeUsername(r[0]);
+   if(!username)return;
    if(index===0&&["username","tiktok","tiktok_username","creator"].includes(username.toLowerCase()))return;
-   if(existing.has(username.toLowerCase())){duplicates++;return}
+   if(existing.has(username.toLowerCase())){
+    duplicates++;
+    return;
+   }
    existing.add(username.toLowerCase());
-   newRows.push({full_name:username,tiktok_username:username,tiktok_url:"https://www.tiktok.com/@"+username,
-    whatsapp:null,country_id:null,manager_id:null,language:null,status:String(r[1]||"Available"),
-    created_at:new Date().toISOString(),country:null,role:"creator",contacted:false,
-    import_metadata:{category:r[2]||"Regular",extra4:r[3]??null,flag1:r[4]??null,flag2:r[5]??null,sourceDate:r[6]??null,value:r[7]??null}});
+
+   newRows.push({
+    full_name:username,
+    tiktok_username:username,
+    tiktok_url:"https://www.tiktok.com/@"+username,
+    whatsapp:null,
+    country_id:country,
+    manager_id:null,
+    language:null,
+    status:String(r[1]||"Available"),
+    created_at:new Date().toISOString(),
+    country:country,
+    role:"creator",
+    contacted:false,
+    contacted_by:null,
+    contacted_at:null,
+    import_metadata:{
+     category:r[2]||"Regular",
+     extra4:r[3]??null,
+     flag1:r[4]??null,
+     flag2:r[5]??null,
+     sourceDate:r[6]??null,
+     value:r[7]??null
+    }
+   });
   });
-  if(!newRows.length){msg("importMessage","Nu există creatori noi. Duplicate ignorate: "+duplicates);return}
+
+  if(!newRows.length){
+   msg("importMessage","Nu există creatori noi. Duplicate ignorate: "+duplicates);
+   return;
+  }
+
   const {error}=await db.from("creators").insert(newRows);
-  if(error){msg("importMessage","Eroare import: "+error.message,true);return}
-  msg("importMessage",`Import reușit: ${newRows.length} creatori. Duplicate ignorate: ${duplicates}.`);
+  if(error){
+   msg("importMessage","Eroare import: "+error.message,true);
+   return;
+  }
+
+  msg("importMessage",`Import reușit: ${newRows.length} creatori pentru ${countryLabel(country)}. Duplicate ignorate: ${duplicates}. Toți au rămas fără manager.`);
   await loadCreators();
- }catch(error){msg("importMessage","Eroare: "+error.message,true)}
+ }catch(error){
+  msg("importMessage","Eroare: "+error.message,true);
+ }
 }
+
 function refreshDashboard(){
- const total=creators.length,contacted=creators.filter(c=>c.contacted===true).length,pending=total-contacted,percent=total?Math.round(contacted/total*100):0;
+ const total=creators.length;
+ const contacted=creators.filter(c=>c.contacted===true).length;
+ const pending=total-contacted;
+ const percent=total?Math.round(contacted/total*100):0;
+
  document.getElementById("totalCreators").textContent=total;
  document.getElementById("contactedCount").textContent=contacted;
  document.getElementById("pendingCount").textContent=pending;
  document.getElementById("contactProgress").style.width=percent+"%";
  document.getElementById("progressText").textContent=percent+"% dintre creatori contactați";
  document.getElementById("activity").textContent="Ultima actualizare: "+new Date().toLocaleString("ro-RO");
- document.getElementById("sTotal").textContent=total;document.getElementById("sContacted").textContent=contacted;
- document.getElementById("sPending").textContent=pending;document.getElementById("sPercent").textContent=percent+"%";
- const countries={};creators.forEach(c=>{const country=c.country||c.country_id||"Nespecificat";countries[country]=(countries[country]||0)+1});
- document.getElementById("countryStats").innerHTML=Object.entries(countries).map(([country,count])=>`<p>${esc(country)}: <strong>${count}</strong></p>`).join("")||"Nu există date.";
+
+ document.getElementById("sTotal").textContent=total;
+ document.getElementById("sContacted").textContent=contacted;
+ document.getElementById("sPending").textContent=pending;
+ document.getElementById("sPercent").textContent=percent+"%";
+
+ const countries={};
+ creators.forEach(c=>{
+  const country=countryLabel(c.country||c.country_id||"Nespecificat");
+  countries[country]=(countries[country]||0)+1;
+ });
+ document.getElementById("countryStats").innerHTML=
+  Object.entries(countries).map(([country,count])=>`<p>${esc(country)}: <strong>${count}</strong></p>`).join("")||"Nu există date.";
 }
+
 function populateCreatorSelects(){
- ["matchOne","matchTwo"].forEach(id=>{document.getElementById(id).innerHTML=creators.map(c=>`<option value="${esc(c.id)}">${esc(c.tiktok_username||c.full_name||c.id)}</option>`).join("")});
+ ["matchOne","matchTwo"].forEach(id=>{
+  document.getElementById(id).innerHTML=creators.map(c=>
+   `<option value="${esc(c.id)}">${esc(c.tiktok_username||c.full_name||"Creator")}</option>`
+  ).join("");
+ });
 }
+
 function showSection(id,button){
  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
  document.getElementById(id).classList.add("active");
@@ -372,32 +670,76 @@ function showSection(id,button){
  const titles={dashboard:"Dashboard",creators:"Creators",matches:"LIVE Matches",managers:"Managers",statistics:"Statistics",ai:"VORTYX AI",settings:"Settings"};
  document.getElementById("pageTitle").textContent=titles[id]||id;
 }
+
 function saveMatch(){
- const one=document.getElementById("matchOne").value,two=document.getElementById("matchTwo").value,date=document.getElementById("matchDate").value;
- if(!one||!two||!date){msg("matchMessage","Completează creatorii și data.",true);return}
- if(one===two){msg("matchMessage","Alege doi creatori diferiți.",true);return}
- const a=creators.find(c=>String(c.id)===one),b=creators.find(c=>String(c.id)===two);
- matches.push({one:a?.tiktok_username||a?.full_name||one,two:b?.tiktok_username||b?.full_name||two,date,country:document.getElementById("matchCountry").value,language:document.getElementById("matchLanguage").value});
- document.getElementById("matchesList").innerHTML=matches.map(m=>`<div class="panel"><strong>@${esc(m.one)} vs @${esc(m.two)}</strong><p>${esc(m.date)} · ${esc(m.country)} · ${esc(m.language)}</p></div>`).join("");
+ const one=document.getElementById("matchOne").value;
+ const two=document.getElementById("matchTwo").value;
+ const date=document.getElementById("matchDate").value;
+
+ if(!one||!two||!date){
+  msg("matchMessage","Completează creatorii și data.",true);
+  return;
+ }
+ if(one===two){
+  msg("matchMessage","Alege doi creatori diferiți.",true);
+  return;
+ }
+
+ const a=creators.find(c=>String(c.id)===one);
+ const b=creators.find(c=>String(c.id)===two);
+ matches.push({
+  one:a?.tiktok_username||a?.full_name||one,
+  two:b?.tiktok_username||b?.full_name||two,
+  date,
+  country:document.getElementById("matchCountry").value,
+  language:document.getElementById("matchLanguage").value
+ });
+
+ document.getElementById("matchesList").innerHTML=matches.map(m=>
+  `<div class="panel"><strong>@${esc(m.one)} vs @${esc(m.two)}</strong><p>${esc(m.date)} · ${esc(m.country)} · ${esc(m.language)}</p></div>`
+ ).join("");
  msg("matchMessage","Meci adăugat în sesiunea curentă.");
 }
+
 async function askAI(){
- const question=document.getElementById("aiQuestion").value.trim();if(!question)return;
- const output=document.getElementById("aiAnswer");output.textContent="VORTYX AI procesează...";
+ const question=document.getElementById("aiQuestion").value.trim();
+ if(!question)return;
+
+ const output=document.getElementById("aiAnswer");
+ output.textContent="VORTYX AI procesează...";
+
  try{
-  const response=await fetch(AI_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question})});
-  const result=await response.json();if(!response.ok)throw new Error(result.error||"Eroare AI");
+  const response=await fetch(AI_URL,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({message:question})
+  });
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||"Eroare AI");
   output.textContent=result.answer||"Nu am primit un răspuns.";
- }catch(error){output.textContent="Eroare VORTYX AI: "+error.message}
+ }catch(error){
+  output.textContent="Eroare VORTYX AI: "+error.message;
+ }
 }
+
 async function changePassword(){
- const password=prompt("Introdu noua parolă (minimum 6 caractere):");if(!password)return;
- if(password.length<6){alert("Parola trebuie să aibă minimum 6 caractere.");return}
- const {error}=await db.auth.updateUser({password});alert(error?error.message:"Parola a fost schimbată.");
+ const password=prompt("Introdu noua parolă (minimum 6 caractere):");
+ if(!password)return;
+ if(password.length<6){
+  alert("Parola trebuie să aibă minimum 6 caractere.");
+  return;
+ }
+ const {error}=await db.auth.updateUser({password});
+ alert(error?error.message:"Parola a fost schimbată.");
 }
+
 db.auth.onAuthStateChange((event)=>{
- if(event==="SIGNED_OUT"){document.getElementById("app").style.display="none";document.getElementById("loginScreen").style.display="flex"}
+ if(event==="SIGNED_OUT"){
+  document.getElementById("app").style.display="none";
+  document.getElementById("loginScreen").style.display="flex";
+ }
 });
+
 checkSession();
 </script>
 </body>
