@@ -1,58 +1,1359 @@
-ALTER TABLE public.matches
-ADD COLUMN IF NOT EXISTS assigned_manager_id uuid
-REFERENCES auth.users(id);
 
-ALTER TABLE public.matches
-ADD COLUMN IF NOT EXISTS assigned_at timestamptz;
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTYX AGENCY Manager</title>
 
-GRANT SELECT, INSERT, UPDATE ON public.matches TO authenticated;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-DROP POLICY IF EXISTS "VORTYX managers read matches" ON public.matches;
-CREATE POLICY "VORTYX managers read matches"
-ON public.matches
-FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1
-    FROM public.user_roles ur
-    WHERE ur.id = auth.uid()
-      AND lower(ur.role) IN ('admin', 'administrator', 'manager')
-  )
-);
+<style>
+:root{
+ --bg:#090811;--panel:#151222;--purple:#852cff;
+ --neon:#b66aff;--text:#f5efff;--muted:#9c93ae;
+ --green:#70f4ad;--red:#ff647c;--border:#302443
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{border:0;border-radius:9px;padding:11px 15px;color:white;background:var(--purple);cursor:pointer}
+button:hover{filter:brightness(1.15)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:#302443}
+button.danger{background:#9d2945}
+input,select,textarea{
+ background:#0e0b18;border:1px solid var(--border);
+ border-radius:8px;color:white;padding:11px;width:100%;outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:var(--neon)}
+label{color:var(--muted);font-size:13px}
+.hidden{display:none!important}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{
+ width:100%;max-width:390px;background:var(--panel);
+ border:1px solid var(--border);border-radius:18px;padding:30px;
+ box-shadow:0 0 35px #852cff22
+}
+.logo{font-size:29px;font-weight:900;letter-spacing:3px;color:var(--neon);text-align:center;margin-bottom:8px}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:25px}
+.field{margin:14px 0}
+.field label{display:block;margin-bottom:7px}
+.full{width:100%}
+#app{display:none;min-height:100vh}
+.sidebar{
+ width:235px;background:#100d1b;border-right:1px solid var(--border);
+ position:fixed;left:0;top:0;bottom:0;padding:22px 14px;z-index:5
+}
+.brand{font-size:22px;font-weight:900;color:var(--neon);letter-spacing:2px;padding:5px 10px 25px}
+.nav button{width:100%;display:block;text-align:left;margin:5px 0;background:transparent;color:var(--muted)}
+.nav button.active,.nav button:hover{background:#29183f;color:white}
+.sidebar-bottom{position:absolute;bottom:18px;left:14px;right:14px}
+.main{margin-left:235px;padding:25px;max-width:1600px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px;flex-wrap:wrap}
+h1{font-size:25px;margin:0}
+h2{font-size:19px;margin-top:0}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat strong{font-size:27px;display:block;margin-top:9px}
+.stat span{font-size:13px;color:var(--muted)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+.toolbar>*{flex:1;min-width:140px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1000px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+th{color:var(--neon);font-weight:700}
+tr:hover td{background:#ffffff05}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.status{display:inline-block;padding:5px 9px;border-radius:20px;background:#302443;color:#d7b8ff;font-size:11px}
+.contact-check{display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap}
+.contact-check input{width:18px;height:18px;padding:0;margin:0;accent-color:var(--purple);cursor:pointer}
+.contacted{color:var(--green)}
+.not-contacted{color:#ffbd73}
+.message{font-size:13px;color:var(--green);margin-top:10px}
+.error{color:var(--red)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.form-grid .field{margin:0}
+.section{display:none}
+.section.active{display:block}
+.progress{height:8px;background:#302443;border-radius:10px;overflow:hidden}
+.progress div{height:100%;background:var(--neon)}
+.ai-answer{white-space:pre-wrap;background:#0e0b18;padding:15px;border-radius:9px;min-height:90px;color:#e8dafa}
+.muted{color:var(--muted)}
+.manager-name-input{min-width:180px;max-width:260px}
+.small-note{font-size:12px;color:var(--muted);margin-top:7px}
+.match-card{background:#0e0b18;border:1px solid var(--border);border-radius:11px;padding:15px;margin:12px 0}
+.match-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.match-details{font-size:13px;color:var(--muted);line-height:1.7}
+.match-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.match-assigned{color:var(--green);font-size:12px}
+.match-pending{color:#ffbd73;font-size:12px}
+@media(max-width:800px){
+ .sidebar{width:100%;height:auto;bottom:auto;position:relative;padding:12px}
+ .brand{padding:5px 8px 12px}
+ .nav{display:flex;overflow-x:auto;gap:5px}
+ .nav button{width:auto;white-space:nowrap;margin:0;padding:9px}
+ .sidebar-bottom{position:static;margin-top:10px}
+ .main{margin-left:0;padding:15px}
+ .topbar{align-items:flex-start}
+}
+</style>
+</head>
 
-DROP POLICY IF EXISTS "VORTYX managers insert matches" ON public.matches;
-CREATE POLICY "VORTYX managers insert matches"
-ON public.matches
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  EXISTS (
-    SELECT 1
-    FROM public.user_roles ur
-    WHERE ur.id = auth.uid()
-      AND lower(ur.role) IN ('admin', 'administrator', 'manager')
-  )
-);
+<body>
 
-DROP POLICY IF EXISTS "VORTYX managers update matches" ON public.matches;
-CREATE POLICY "VORTYX managers update matches"
-ON public.matches
-FOR UPDATE
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1
-    FROM public.user_roles ur
-    WHERE ur.id = auth.uid()
-      AND lower(ur.role) IN ('admin', 'administrator', 'manager')
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1
-    FROM public.user_roles ur
-    WHERE ur.id = auth.uid()
-      AND lower(ur.role) IN ('admin', 'administrator', 'manager')
-  )
-);
+<div id="loginScreen">
+ <div class="login-box">
+  <div class="logo">VORTYX</div>
+  <div class="subtitle">AGENCY MANAGER</div>
+  <div class="field">
+   <label>Email</label>
+   <input id="loginEmail" type="email" placeholder="Email" autocomplete="username">
+  </div>
+  <div class="field">
+   <label>Parolă</label>
+   <input id="loginPassword" type="password" placeholder="Parolă" autocomplete="current-password">
+  </div>
+  <button class="full" onclick="login()">AUTENTIFICARE</button>
+  <button class="secondary full" style="margin-top:10px" onclick="resetPassword()">Am uitat parola</button>
+  <div id="loginMessage" class="message"></div>
+ </div>
+</div>
+
+<div id="app">
+ <aside class="sidebar">
+  <div class="brand">VORTYX</div>
+  <nav class="nav">
+   <button class="active" onclick="showSection('dashboard',this)">Dashboard</button>
+   <button onclick="showSection('creators',this)">Creators</button>
+   <button onclick="showSection('matches',this)">LIVE Matches</button>
+   <button onclick="showSection('managers',this)">Managers</button>
+   <button onclick="showSection('statistics',this)">Statistics</button>
+   <button onclick="showSection('ai',this)">VORTYX AI</button>
+   <button onclick="showSection('settings',this)">Settings</button>
+  </nav>
+  <div class="sidebar-bottom">
+   <small id="userInfo"></small>
+   <button class="danger full" onclick="logout()" style="margin-top:10px">Deconectare</button>
+  </div>
+ </aside>
+
+ <main class="main">
+  <div class="topbar">
+   <h1 id="pageTitle">Dashboard</h1>
+   <span class="status" id="roleLabel">Conectat</span>
+  </div>
+
+  <section id="dashboard" class="section active">
+   <div class="grid">
+    <div class="stat"><span>Total creatori</span><strong id="totalCreators">0</strong></div>
+    <div class="stat"><span>Contactați</span><strong id="contactedCount">0</strong></div>
+    <div class="stat"><span>De contactat</span><strong id="pendingCount">0</strong></div>
+    <div class="stat"><span>Manageri</span><strong id="managerCount">0</strong></div>
+   </div>
+   <div class="panel">
+    <h2>Progres contactare</h2>
+    <div class="progress"><div id="contactProgress" style="width:0%"></div></div>
+    <p id="progressText" class="muted">0% dintre creatori contactați</p>
+   </div>
+   <div class="panel">
+    <h2>Activitate</h2>
+    <p id="activity" class="muted">Bine ai venit în VORTYX AGENCY Manager.</p>
+   </div>
+  </section>
+
+  <section id="creators" class="section">
+   <div class="panel">
+    <h2>Lista creatorilor</h2>
+    <p class="muted">
+     Lista este comună tuturor managerilor. Contactarea, managerul care a contactat
+     și data/ora sunt salvate în Supabase.
+    </p>
+    <div class="toolbar">
+     <input id="creatorSearch" placeholder="Caută creator..." oninput="renderCreators()">
+     <select id="contactFilter" onchange="renderCreators()">
+      <option value="all">Toți creatorii</option>
+      <option value="pending">De contactat</option>
+      <option value="contacted">Contactați</option>
+     </select>
+     <select id="countryFilter" onchange="renderCreators()">
+      <option value="all">Toate țările</option>
+      <option value="RO">România</option>
+      <option value="DE">Germania</option>
+     </select>
+     <select id="contactedByFilter" onchange="renderCreators()">
+      <option value="all">Toți managerii care au contactat</option>
+     </select>
+     <button onclick="loadCreators()">Reîncarcă</button>
+    </div>
+    <div class="table-wrap">
+     <table>
+      <thead>
+       <tr>
+        <th>Nume</th><th>TikTok</th><th>Țară</th><th>Manager asignat</th>
+        <th>Status</th><th>Contactare</th><th>Contactat de</th><th>Data contactării</th>
+       </tr>
+      </thead>
+      <tbody id="creatorTable">
+       <tr><td colspan="8" class="empty">Se încarcă...</td></tr>
+      </tbody>
+     </table>
+    </div>
+    <div id="creatorMessage" class="message"></div>
+   </div>
+
+   <div class="panel" id="addCreatorPanel">
+    <h2>Adaugă creator</h2>
+    <div class="form-grid">
+     <div class="field"><label>Nume</label><input id="newName" placeholder="Nume creator"></div>
+     <div class="field"><label>Username TikTok</label><input id="newTikTok" placeholder="@username"></div>
+     <div class="field">
+      <label>Țară</label>
+      <select id="newCountry"><option value="RO">România</option><option value="DE">Germania</option></select>
+     </div>
+     <div class="field"><label>Manager</label><select id="newManager"><option value="">Fără manager</option></select></div>
+     <div class="field">
+      <label>Limba</label>
+      <select id="newLanguage">
+       <option value="Romanian">Română</option><option value="German">Germană</option><option value="English">Engleză</option>
+      </select>
+     </div>
+     <div class="field">
+      <label>Status</label>
+      <select id="newStatus">
+       <option value="Available">Available</option><option value="Active">Active</option><option value="Inactive">Inactive</option>
+      </select>
+     </div>
+    </div>
+    <button onclick="addCreator()" style="margin-top:15px">Adaugă creator</button>
+    <div id="addMessage" class="message"></div>
+   </div>
+
+   <div class="panel" id="importPanel">
+    <h2>Import creatori Excel / CSV</h2>
+    <p class="muted">
+     Prima coloană trebuie să conțină username-ul TikTok.
+     Creatorii importați rămân fără manager, pentru repartizare manuală.
+    </p>
+    <div class="form-grid">
+     <div class="field">
+      <label>Țara creatorilor din fișier</label>
+      <select id="importCountry">
+       <option value="">Selectează țara înainte de import</option>
+       <option value="RO">România (RO)</option><option value="DE">Germania (DE)</option>
+      </select>
+     </div>
+     <div class="field"><label>Fișier Excel / CSV</label><input type="file" id="importFile" accept=".xlsx,.xls,.csv"></div>
+    </div>
+    <button onclick="importCreators()" style="margin-top:12px">Importă fișierul</button>
+    <button id="deleteImportedButton" onclick="deleteImportedCreators()" class="danger" style="margin-top:12px;margin-left:8px">
+     Șterge lista importată din Excel
+    </button>
+    <div class="small-note">
+     Această operațiune șterge numai creatorii importați prin Excel/CSV.
+     Creatorii adăugați manual nu sunt afectați.
+    </div>
+    <div id="importMessage" class="message"></div>
+   </div>
+  </section>
+
+  <section id="matches" class="section">
+   <div class="panel">
+    <h2>LIVE Matches</h2>
+    <p class="muted">
+     Solicitările primite de la Telegram sunt afișate aici pentru toți managerii.
+     Lista se actualizează automat.
+    </p>
+    <div class="toolbar">
+     <button onclick="loadMatches()">Reîncarcă solicitările</button>
+     <span id="matchesLastUpdate" class="small-note">Aștept încărcarea datelor...</span>
+    </div>
+    <div id="matchesList" style="margin-top:15px">
+     <div class="empty">Se încarcă solicitările...</div>
+    </div>
+   </div>
+
+   <div class="panel">
+    <h2>Programează manual un meci</h2>
+    <div class="form-grid">
+     <div class="field"><label>Creator 1</label><select id="matchOne"></select></div>
+     <div class="field"><label>Creator 2</label><select id="matchTwo"></select></div>
+     <div class="field"><label>Data și ora</label><input type="datetime-local" id="matchDate"></div>
+     <div class="field">
+      <label>Țara</label>
+      <select id="matchCountry"><option value="RO">RO</option><option value="DE">DE</option></select>
+     </div>
+     <div class="field">
+      <label>Limba</label>
+      <select id="matchLanguage">
+       <option value="Romanian">Romanian</option><option value="German">German</option><option value="English">English</option>
+      </select>
+     </div>
+    </div>
+    <button onclick="saveMatch()" style="margin-top:14px">Adaugă în program</button>
+    <div id="matchMessage" class="message"></div>
+   </div>
+  </section>
+
+  <section id="managers" class="section">
+   <div class="panel">
+    <h2>Manageri</h2>
+    <p class="muted">
+     Conturile se creează din Supabase Authentication, apoi se adaugă în
+     user_roles cu rolul manager. Administratorul poate configura numele afișat.
+    </p>
+    <div class="table-wrap">
+     <table>
+      <thead><tr><th>Nume afișat</th><th>Rol</th><th>Acțiune</th></tr></thead>
+      <tbody id="managerTable"></tbody>
+     </table>
+    </div>
+    <div id="managerMessage" class="message"></div>
+   </div>
+  </section>
+
+  <section id="statistics" class="section">
+   <div class="grid">
+    <div class="stat"><span>Total creatori</span><strong id="sTotal">0</strong></div>
+    <div class="stat"><span>Contactați</span><strong id="sContacted">0</strong></div>
+    <div class="stat"><span>De contactat</span><strong id="sPending">0</strong></div>
+    <div class="stat"><span>Procent contactare</span><strong id="sPercent">0%</strong></div>
+   </div>
+   <div class="panel"><h2>Distribuție pe țări</h2><div id="countryStats"></div></div>
+  </section>
+
+  <section id="ai" class="section">
+   <div class="panel">
+    <h2>VORTYX AI</h2>
+    <p class="muted">Asistentul AI al agenției.</p>
+    <textarea id="aiQuestion" rows="4" placeholder="Scrie întrebarea pentru VORTYX AI..."></textarea>
+    <button onclick="askAI()" style="margin-top:12px">Trimite</button>
+    <div id="aiAnswer" class="ai-answer" style="margin-top:15px">Aștept întrebarea ta.</div>
+   </div>
+  </section>
+
+  <section id="settings" class="section">
+   <div class="panel">
+    <h2>Setări cont</h2>
+    <p id="settingsEmail" class="muted"></p>
+    <button class="secondary" onclick="changePassword()">Schimbă parola</button>
+   </div>
+   <div class="panel">
+    <h2>Linkuri de înscriere VORTYX</h2>
+    <p>România:
+     <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSqTWLUsm/" target="_blank" rel="noopener">Înscriere România</a>
+    </p>
+    <p>Germania:
+     <a style="color:var(--neon)" href="https://www.tiktok.com/t/ZSggE3nym/" target="_blank" rel="noopener">Înscriere Germania</a>
+    </p>
+   </div>
+  </section>
+ </main>
+</div>
+
+<script>
+"use strict";
+
+/* CONFIGURARE SUPABASE */
+const SUPABASE_URL = "https://ujtqbksmdzgllhxrznrc.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
+const AI_URL = "https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
+const MATCH_REFRESH_MS = 15000;
+
+if (!window.supabase) {
+ alert("Biblioteca Supabase nu s-a încărcat. Verifică conexiunea la internet și reîncarcă pagina.");
+ throw new Error("Supabase JS library unavailable");
+}
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentRole = null;
+let creators = [];
+let managers = [];
+let matches = [];
+let loadingSession = false;
+let matchesRefreshTimer = null;
+let matchesLoading = false;
+
+/* FUNCȚII GENERALE */
+function msg(id, text, error = false) {
+ const element = document.getElementById(id);
+ if (!element) return;
+ element.textContent = text;
+ element.className = error ? "message error" : "message";
+}
+
+function esc(value) {
+ return String(value ?? "").replace(/[&<>"']/g, character => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[character]));
+}
+
+function normalizeUsername(value) {
+ return String(value || "").trim().replace(/^@/, "").replace(/\s/g, "");
+}
+
+function isAdmin() {
+ return currentRole === "admin" || currentRole === "administrator";
+}
+
+function normalizeCountry(value) {
+ const country = String(value ?? "").trim().toUpperCase();
+ if (["RO","ROMANIA","ROMÂNIA"].includes(country)) return "RO";
+ if (["DE","GERMANY","GERMANIA","DEUTSCHLAND"].includes(country)) return "DE";
+ return country || "—";
+}
+
+function countryLabel(value) {
+ const country = normalizeCountry(value);
+ if (country === "RO") return "România";
+ if (country === "DE") return "Germania";
+ return country;
+}
+
+function managerName(id) {
+ if (!id) return "Fără manager";
+ const manager = managers.find(item => String(item.id) === String(id));
+ return manager?.display_name || "Nume neconfigurat";
+}
+
+function formatDate(value) {
+ if (!value) return "—";
+ const date = new Date(value);
+ if (Number.isNaN(date.getTime())) return "—";
+ return date.toLocaleString("ro-RO", { dateStyle:"short", timeStyle:"short" });
+}
+
+/* AUTENTIFICARE */
+async function login() {
+ const email = document.getElementById("loginEmail").value.trim();
+ const password = document.getElementById("loginPassword").value;
+
+ if (!email || !password) {
+  msg("loginMessage", "Introdu emailul și parola.", true);
+  return;
+ }
+
+ msg("loginMessage", "Se verifică datele de autentificare...");
+ const button = document.querySelector("#loginScreen button.full");
+ button.disabled = true;
+
+ try {
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+   msg("loginMessage", error.message, true);
+   return;
+  }
+  await checkSession();
+ } catch (error) {
+  msg("loginMessage", "Eroare la autentificare: " + error.message, true);
+ } finally {
+  button.disabled = false;
+ }
+}
+
+async function resetPassword() {
+ const email = document.getElementById("loginEmail").value.trim();
+ if (!email) {
+  msg("loginMessage", "Introdu emailul.", true);
+  return;
+ }
+ const { error } = await db.auth.resetPasswordForEmail(email, {
+  redirectTo: location.origin + location.pathname
+ });
+ msg("loginMessage", error ? error.message : "Verifică emailul pentru resetarea parolei.", !!error);
+}
+
+async function logout() {
+ stopMatchesAutoRefresh();
+ await db.auth.signOut();
+ currentUser = null;
+ currentRole = null;
+ location.reload();
+}
+
+async function checkSession() {
+ if (loadingSession) return;
+ loadingSession = true;
+
+ try {
+  const { data, error } = await db.auth.getSession();
+  if (error) throw error;
+
+  if (!data.session) {
+   document.getElementById("loginScreen").style.display = "flex";
+   document.getElementById("app").style.display = "none";
+   return;
+  }
+
+  currentUser = data.session.user;
+
+  const { data: roleData, error: roleError } = await db
+   .from("user_roles").select("id,role").eq("id", currentUser.id).maybeSingle();
+
+  if (roleError) {
+   msg("loginMessage", "Eroare la verificarea rolului: " + roleError.message, true);
+   await db.auth.signOut();
+   return;
+  }
+
+  if (!roleData) {
+   await db.auth.signOut();
+   msg("loginMessage", "Contul nu are rol configurat în user_roles.", true);
+   return;
+  }
+
+  currentRole = String(roleData.role || "").toLowerCase();
+
+  if (!["administrator","admin","manager"].includes(currentRole)) {
+   await db.auth.signOut();
+   msg("loginMessage", "Nu ai acces la aplicație.", true);
+   return;
+  }
+
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("userInfo").textContent = currentUser.email || "";
+  document.getElementById("settingsEmail").textContent = currentUser.email || "";
+  document.getElementById("roleLabel").textContent = currentRole.toUpperCase();
+
+  const admin = isAdmin();
+  document.getElementById("addCreatorPanel").classList.toggle("hidden", !admin);
+  document.getElementById("importPanel").classList.toggle("hidden", !admin);
+
+  await loadAll();
+  startMatchesAutoRefresh();
+
+ } catch (error) {
+  msg("loginMessage", "Eroare la verificarea sesiunii: " + error.message, true);
+ } finally {
+  loadingSession = false;
+ }
+}
+
+/* ÎNCĂRCARE DATE */
+async function loadAll() {
+ await loadManagers();
+ await loadCreators();
+ await loadMatches();
+ refreshDashboard();
+ populateCreatorSelects();
+}
+
+async function loadCreators() {
+ const { data, error } = await db
+  .from("creators").select("*").order("created_at", { ascending:false }).limit(1000);
+
+ if (error) {
+  msg("creatorMessage", "Eroare la încărcarea creatorilor: " + error.message, true);
+  console.error("loadCreators:", error);
+  return;
+ }
+
+ creators = data || [];
+ renderCreators();
+ refreshDashboard();
+ populateCreatorSelects();
+ renderMatches();
+}
+
+/* CREATORI */
+function creatorData(row) {
+ return {
+  id:row.id,
+  name:row.full_name || row.tiktok_username || "Fără nume",
+  tiktok:normalizeUsername(row.tiktok_username || ""),
+  country:normalizeCountry(row.country || row.country_id),
+  manager:row.manager_id || "",
+  status:row.status || "Available",
+  contacted:row.contacted === true,
+  contactedBy:row.contacted_by || null,
+  contactedAt:row.contacted_at || null
+ };
+}
+
+function renderCreators() {
+ const search = (document.getElementById("creatorSearch")?.value || "").toLowerCase();
+ const filter = document.getElementById("contactFilter")?.value || "all";
+ const countryFilter = document.getElementById("countryFilter")?.value || "all";
+ const contactedByFilter = document.getElementById("contactedByFilter")?.value || "all";
+
+ const list = creators.filter(row => {
+  const creator = creatorData(row);
+  const matchSearch = (
+   creator.name + " " + creator.tiktok + " " +
+   creator.country + " " + managerName(creator.manager)
+  ).toLowerCase().includes(search);
+
+  const matchContact =
+   filter === "all" ||
+   (filter === "contacted" && creator.contacted) ||
+   (filter === "pending" && !creator.contacted);
+
+  const matchCountry = countryFilter === "all" || creator.country === countryFilter;
+  const matchManager = contactedByFilter === "all" ||
+   String(creator.contactedBy || "") === contactedByFilter;
+
+  return matchSearch && matchContact && matchCountry && matchManager;
+ });
+
+ document.getElementById("creatorTable").innerHTML = list.map(row => {
+  const creator = creatorData(row);
+  const contactedManager = creator.contactedBy ? managerName(creator.contactedBy) : "—";
+  const contactDate = creator.contactedAt
+   ? formatDate(creator.contactedAt)
+   : (creator.contacted ? "Istoric indisponibil" : "—");
+
+  return `
+   <tr>
+    <td>${esc(creator.name)}</td>
+    <td>${creator.tiktok
+     ? `<a style="color:var(--neon)" target="_blank" rel="noopener" href="https://www.tiktok.com/@${encodeURIComponent(creator.tiktok)}">@${esc(creator.tiktok)}</a>`
+     : "—"}</td>
+    <td>${esc(countryLabel(creator.country))}</td>
+    <td>${esc(managerName(creator.manager))}</td>
+    <td><span class="status">${esc(creator.status)}</span></td>
+    <td>
+     <label class="contact-check ${creator.contacted ? "contacted" : "not-contacted"}">
+      <input type="checkbox" ${creator.contacted ? "checked" : ""}
+       onchange="updateContacted('${esc(row.id)}',this.checked)">
+      ${creator.contacted ? "Contactat" : "De contactat"}
+     </label>
+    </td>
+    <td>${esc(contactedManager)}</td>
+    <td>${esc(contactDate)}</td>
+   </tr>
+  `;
+ }).join("") || `<tr><td colspan="8" class="empty">Nu există creatori pentru filtrele selectate.</td></tr>`;
+}
+
+async function updateContacted(id, checked) {
+ const row = creators.find(item => String(item.id) === String(id));
+ if (!row) return;
+ if (!currentUser) {
+  alert("Sesiunea a expirat. Autentifică-te din nou.");
+  return;
+ }
+
+ const payload = checked
+  ? { contacted:true, contacted_by:currentUser.id, contacted_at:new Date().toISOString() }
+  : { contacted:false, contacted_by:null, contacted_at:null };
+
+ const { error } = await db.from("creators").update(payload).eq("id", id);
+
+ if (error) {
+  alert("Nu s-a putut salva contactarea: " + error.message);
+  renderCreators();
+  return;
+ }
+
+ Object.assign(row, payload);
+ msg("creatorMessage", checked
+  ? "Contactarea a fost salvată împreună cu managerul și data/ora."
+  : "Contactarea a fost anulată. Evidența managerului și data au fost șterse.");
+ renderCreators();
+ refreshDashboard();
+}
+
+/* MANAGERI */
+async function loadManagers() {
+ const { data, error } = await db.from("user_roles").select("id,role");
+
+ if (error) {
+  msg("managerMessage", "Eroare la încărcarea managerilor: " + error.message, true);
+  return;
+ }
+
+ const roleUsers = (data || []).filter(item =>
+  ["manager","administrator","admin"].includes(String(item.role).toLowerCase())
+ );
+
+ const { data:profiles, error:profileError } = await db
+  .from("manager_profiles").select("manager_id,display_name");
+
+ if (profileError) {
+  msg("managerMessage", "Nu pot încărca numele managerilor din manager_profiles: " + profileError.message, true);
+  managers = roleUsers.map(item => ({ ...item, display_name:"" }));
+ } else {
+  managers = roleUsers.map(item => {
+   const profile = (profiles || []).find(p => String(p.manager_id) === String(item.id));
+   return { ...item, display_name:profile?.display_name || "" };
+  });
+ }
+
+ renderManagers();
+ populateManagerFilters();
+
+ document.getElementById("managerCount").textContent =
+  managers.filter(m => String(m.role).toLowerCase() === "manager").length;
+
+ document.getElementById("newManager").innerHTML =
+  '<option value="">Fără manager</option>' +
+  managers.filter(m => String(m.role).toLowerCase() === "manager")
+   .map(m => `<option value="${esc(m.id)}">${esc(m.display_name || "Nume neconfigurat")}</option>`)
+   .join("");
+
+ renderCreators();
+}
+
+function renderManagers() {
+ const tbody = document.getElementById("managerTable");
+
+ if (!managers.length) {
+  tbody.innerHTML = '<tr><td colspan="3" class="empty">Nu există manageri.</td></tr>';
+  return;
+ }
+
+ tbody.innerHTML = managers.map(manager => {
+  const name = manager.display_name || "";
+
+  if (isAdmin()) {
+   return `
+    <tr>
+     <td><input class="manager-name-input" id="managerName_${esc(manager.id)}"
+      value="${esc(name)}" placeholder="Introdu numele managerului"></td>
+     <td><span class="status">${esc(manager.role)}</span></td>
+     <td><button onclick="saveManagerName('${esc(manager.id)}')">Salvează</button></td>
+    </tr>`;
+  }
+
+  return `<tr><td>${esc(name || "Nume neconfigurat")}</td>
+   <td><span class="status">${esc(manager.role)}</span></td><td>—</td></tr>`;
+ }).join("");
+}
+
+function populateManagerFilters() {
+ const select = document.getElementById("contactedByFilter");
+ const current = select.value || "all";
+
+ select.innerHTML =
+  '<option value="all">Toți managerii care au contactat</option>' +
+  managers.map(manager =>
+   `<option value="${esc(manager.id)}">${esc(manager.display_name || "Nume neconfigurat")}</option>`
+  ).join("");
+
+ if ([...select.options].some(option => option.value === current)) select.value = current;
+}
+
+async function saveManagerName(id) {
+ if (!isAdmin()) {
+  msg("managerMessage", "Doar administratorul poate modifica numele managerilor.", true);
+  return;
+ }
+
+ const input = document.getElementById("managerName_" + id);
+ const displayName = input?.value.trim() || "";
+
+ if (!displayName) {
+  msg("managerMessage", "Introdu un nume pentru manager.", true);
+  return;
+ }
+
+ const { error } = await db.from("manager_profiles").upsert({
+  manager_id:id, display_name:displayName, updated_at:new Date().toISOString()
+ }, { onConflict:"manager_id" });
+
+ if (error) {
+  msg("managerMessage", "Nu s-a putut salva numele: " + error.message, true);
+  return;
+ }
+
+ const manager = managers.find(item => String(item.id) === String(id));
+ if (manager) manager.display_name = displayName;
+
+ msg("managerMessage", "Numele managerului a fost salvat.");
+ renderManagers();
+ populateManagerFilters();
+ renderCreators();
+ renderMatches();
+}
+
+/* ADAUGARE CREATOR */
+async function addCreator() {
+ if (!isAdmin()) {
+  msg("addMessage", "Nu ai permisiunea de a adăuga creatori.", true);
+  return;
+ }
+
+ const username = normalizeUsername(document.getElementById("newTikTok").value);
+ const name = document.getElementById("newName").value.trim() || username;
+
+ if (!username) {
+  msg("addMessage", "Introdu username-ul TikTok.", true);
+  return;
+ }
+
+ const country = document.getElementById("newCountry").value;
+
+ const payload = {
+  full_name:name,
+  tiktok_username:username,
+  tiktok_url:"https://www.tiktok.com/@" + username,
+  whatsapp:null,
+  country_id:null,
+  manager_id:document.getElementById("newManager").value || null,
+  language:document.getElementById("newLanguage").value,
+  status:document.getElementById("newStatus").value,
+  created_at:new Date().toISOString(),
+  country:country,
+  role:"creator",
+  contacted:false,
+  contacted_by:null,
+  contacted_at:null
+ };
+
+ const { error } = await db.from("creators").insert(payload);
+
+ if (error) {
+  msg("addMessage", "Eroare la adăugare: " + error.message, true);
+  return;
+ }
+
+ msg("addMessage", "Creator adăugat cu succes.");
+ document.getElementById("newName").value = "";
+ document.getElementById("newTikTok").value = "";
+ await loadCreators();
+}
+
+/* IMPORT EXCEL / CSV */
+async function importCreators() {
+ if (!isAdmin()) {
+  msg("importMessage", "Nu ai permisiunea de a importa creatori.", true);
+  return;
+ }
+
+ const file = document.getElementById("importFile").files[0];
+ const country = document.getElementById("importCountry").value;
+
+ if (!country) {
+  msg("importMessage", "Selectează țara creatorilor înainte de import.", true);
+  return;
+ }
+ if (!file) {
+  msg("importMessage", "Selectează un fișier Excel sau CSV.", true);
+  return;
+ }
+
+ try {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type:"array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+  if (!sheet) {
+   msg("importMessage", "Fișierul nu conține o foaie de calcul.", true);
+   return;
+  }
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"" });
+  const existing = new Set(creators.map(item =>
+   normalizeUsername(item.tiktok_username).toLowerCase()
+  ));
+
+  const newRows = [];
+  let duplicates = 0;
+
+  rows.forEach((row, index) => {
+   const username = normalizeUsername(row[0]);
+   if (!username) return;
+
+   if (index === 0 &&
+    ["username","tiktok","tiktok_username","creator"].includes(username.toLowerCase())) return;
+
+   if (existing.has(username.toLowerCase())) {
+    duplicates++;
+    return;
+   }
+
+   existing.add(username.toLowerCase());
+
+   newRows.push({
+    full_name:username,
+    tiktok_username:username,
+    tiktok_url:"https://www.tiktok.com/@" + username,
+    whatsapp:null,
+    country_id:null,
+    manager_id:null,
+    language:null,
+    status:String(row[1] || "Available"),
+    created_at:new Date().toISOString(),
+    country:country,
+    role:"creator",
+    contacted:false,
+    contacted_by:null,
+    contacted_at:null,
+    import_metadata:{
+     category:row[2] || "Regular",
+     extra4:row[3] ?? null,
+     flag1:row[4] ?? null,
+     flag2:row[5] ?? null,
+     sourceDate:row[6] ?? null,
+     value:row[7] ?? null
+    }
+   });
+  });
+
+  if (!newRows.length) {
+   msg("importMessage", "Nu există creatori noi. Duplicate ignorate: " + duplicates);
+   return;
+  }
+
+  const batchSize = 100;
+  let imported = 0;
+
+  for (let index = 0; index < newRows.length; index += batchSize) {
+   const batch = newRows.slice(index, index + batchSize);
+   const { error } = await db.from("creators").insert(batch);
+
+   if (error) {
+    msg("importMessage", "Import oprit după " + imported + " creatori. Eroare: " + error.message, true);
+    await loadCreators();
+    return;
+   }
+   imported += batch.length;
+  }
+
+  msg("importMessage",
+   `Import reușit: ${imported} creatori pentru ${countryLabel(country)}. Duplicate ignorate: ${duplicates}. Toți au rămas fără manager.`);
+
+  document.getElementById("importFile").value = "";
+  await loadCreators();
+
+ } catch (error) {
+  msg("importMessage", "Eroare la citirea fișierului: " + error.message, true);
+ }
+}
+
+/* ȘTERGERE CREATORI IMPORTAȚI */
+async function deleteImportedCreators() {
+ if (!isAdmin()) {
+  msg("importMessage", "Doar administratorul poate șterge creatorii importați.", true);
+  return;
+ }
+
+ const button = document.getElementById("deleteImportedButton");
+ if (button) button.disabled = true;
+
+ try {
+  msg("importMessage", "Se verifică lista importată...");
+
+  const { count, error:countError } = await db
+   .from("creators").select("id", { count:"exact", head:true })
+   .not("import_metadata", "is", null);
+
+  if (countError) throw countError;
+  if (!count) {
+   msg("importMessage", "Nu există creatori importați din Excel/CSV.");
+   return;
+  }
+
+  const confirmed = confirm(
+   "ATENȚIE!\n\nAu fost găsiți " + count + " creatori importați din Excel/CSV.\n\n" +
+   "Vor fi șterși numai acești creatori.\nCreatorii adăugați manual NU vor fi șterși.\n" +
+   "Managerii și conturile acestora NU vor fi afectate.\n\nDorești să continui?"
+  );
+
+  if (!confirmed) {
+   msg("importMessage", "Ștergerea a fost anulată.");
+   return;
+  }
+
+  msg("importMessage", "Se șterg creatorii importați...");
+
+  const { data, error } = await db.from("creators")
+   .delete().not("import_metadata", "is", null).select("id");
+
+  if (error) throw error;
+
+  const deleted = data?.length || 0;
+  await loadCreators();
+  msg("importMessage", "Operațiune finalizată. Au fost șterși " + deleted + " creatori importați din Excel/CSV.");
+
+ } catch (error) {
+  console.error("deleteImportedCreators:", error);
+  msg("importMessage", "Eroare la ștergere: " + error.message +
+   ". Verifică permisiunile DELETE și politicile RLS din Supabase.", true);
+ } finally {
+  if (button) button.disabled = false;
+ }
+}
+
+/* DASHBOARD ȘI STATISTICI */
+function refreshDashboard() {
+ const total = creators.length;
+ const contacted = creators.filter(item => item.contacted === true).length;
+ const pending = total - contacted;
+ const percent = total ? Math.round(contacted / total * 100) : 0;
+
+ document.getElementById("totalCreators").textContent = total;
+ document.getElementById("contactedCount").textContent = contacted;
+ document.getElementById("pendingCount").textContent = pending;
+ document.getElementById("contactProgress").style.width = percent + "%";
+ document.getElementById("progressText").textContent = percent + "% dintre creatori contactați";
+ document.getElementById("activity").textContent = "Ultima actualizare: " + new Date().toLocaleString("ro-RO");
+
+ document.getElementById("sTotal").textContent = total;
+ document.getElementById("sContacted").textContent = contacted;
+ document.getElementById("sPending").textContent = pending;
+ document.getElementById("sPercent").textContent = percent + "%";
+
+ const countries = {};
+ creators.forEach(item => {
+  const country = countryLabel(item.country || item.country_id || "Nespecificat");
+  countries[country] = (countries[country] || 0) + 1;
+ });
+
+ document.getElementById("countryStats").innerHTML =
+  Object.entries(countries).map(([country,count]) =>
+   `<p>${esc(country)}: <strong>${count}</strong></p>`
+  ).join("") || "Nu există date.";
+}
+
+/* SELECTOARE CREATORI */
+function populateCreatorSelects() {
+ ["matchOne","matchTwo"].forEach(id => {
+  document.getElementById(id).innerHTML =
+   '<option value="">Selectează creator</option>' +
+   creators.map(item =>
+    `<option value="${esc(item.id)}">${esc(item.tiktok_username || item.full_name || "Creator")}</option>`
+   ).join("");
+ });
+}
+
+/* NAVIGARE */
+function showSection(id, button) {
+ document.querySelectorAll(".section").forEach(section => section.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+
+ document.querySelectorAll(".nav button").forEach(item => item.classList.remove("active"));
+ if (button) button.classList.add("active");
+
+ const titles = {
+  dashboard:"Dashboard", creators:"Creators", matches:"LIVE Matches",
+  managers:"Managers", statistics:"Statistics", ai:"VORTYX AI", settings:"Settings"
+ };
+
+ document.getElementById("pageTitle").textContent = titles[id] || id;
+
+ if (id === "matches") loadMatches();
+}
+
+/* =========================================
+   LIVE MATCHES - SUPABASE
+========================================= */
+
+async function loadMatches() {
+ if (!currentUser || matchesLoading) return;
+ matchesLoading = true;
+
+ const container = document.getElementById("matchesList");
+ if (container && !matches.length) {
+  container.innerHTML = '<div class="empty">Se încarcă solicitările...</div>';
+ }
+
+ try {
+  const { data, error } = await db
+   .from("matches")
+   .select(`
+    id,
+    requested_tiktok_username,
+    creator_one_id,
+    creator_two_id,
+    scheduled_at,
+    country,
+    language,
+    status,
+    assigned_manager_id,
+    assigned_at
+   `)
+   .order("scheduled_at", { ascending:true, nullsFirst:false });
+
+  if (error) throw error;
+
+  matches = data || [];
+  renderMatches();
+
+  const updated = document.getElementById("matchesLastUpdate");
+  if (updated) updated.textContent = "Ultima actualizare: " + new Date().toLocaleTimeString("ro-RO");
+
+ } catch (error) {
+  console.error("loadMatches:", error);
+  if (container) {
+   container.innerHTML =
+    `<div class="empty error">Nu s-au putut încărca solicitările: ${esc(error.message)}</div>`;
+  }
+ } finally {
+  matchesLoading = false;
+ }
+}
+
+function getCreatorMatchName(id) {
+ if (!id) return "";
+ const creator = creators.find(item => String(item.id) === String(id));
+ if (!creator) return "Creator din baza de date";
+ return creator.tiktok_username
+  ? "@" + normalizeUsername(creator.tiktok_username)
+  : (creator.full_name || "Creator");
+}
+
+function matchStatusLabel(status) {
+ const labels = {
+  pending:"Solicitare nouă",
+  scheduled:"Programat",
+  accepted:"Acceptat",
+  completed:"Finalizat",
+  cancelled:"Anulat"
+ };
+ return labels[String(status || "").toLowerCase()] || String(status || "Necunoscut");
+}
+
+function renderMatches() {
+ const container = document.getElementById("matchesList");
+ if (!container) return;
+
+ if (!matches.length) {
+  container.innerHTML = '<div class="empty">Nu există solicitări sau meciuri înregistrate.</div>';
+  return;
+ }
+
+ container.innerHTML = matches.map(match => {
+  const requestedName = match.requested_tiktok_username
+   ? "@" + normalizeUsername(match.requested_tiktok_username)
+   : "";
+
+  const firstName = requestedName || getCreatorMatchName(match.creator_one_id) || "Creator 1";
+  const secondName = getCreatorMatchName(match.creator_two_id) || "Așteaptă adversar";
+
+  const assigned = match.assigned_manager_id
+   ? managerName(match.assigned_manager_id)
+   : "";
+
+  const isMine = match.assigned_manager_id &&
+   String(match.assigned_manager_id) === String(currentUser?.id);
+
+  const isPending = String(match.status || "").toLowerCase() === "pending";
+
+  let action = "";
+
+  if (!match.assigned_manager_id && isPending) {
+   action = `<button onclick="claimMatch('${esc(match.id)}')">Preiau solicitarea</button>`;
+  } else if (isMine) {
+   action = `<button class="secondary" onclick="releaseMatch('${esc(match.id)}')">Renunț la solicitare</button>`;
+  } else if (assigned) {
+   action = `<span class="match-assigned">Preluată de: ${esc(assigned)}</span>`;
+  }
+
+  return `
+   <div class="match-card">
+    <div class="match-card-header">
+     <strong>${esc(firstName)}${match.creator_two_id ? " VS " + esc(secondName) : ""}</strong>
+     <span class="status">${esc(matchStatusLabel(match.status))}</span>
+    </div>
+    <div class="match-details">
+     <div>📅 ${esc(formatDate(match.scheduled_at))}</div>
+     <div>🌍 ${esc(countryLabel(match.country || "—"))}</div>
+     <div>🗣 ${esc(match.language || "—")}</div>
+     ${match.requested_tiktok_username ? "<div>📨 Solicitare primită prin Telegram</div>" : ""}
+     ${assigned ? `<div class="match-assigned">Manager responsabil: ${esc(assigned)}</div>` : '<div class="match-pending">Așteaptă preluarea de către un manager</div>'}
+     ${match.assigned_at ? `<div>Preluată la: ${esc(formatDate(match.assigned_at))}</div>` : ""}
+    </div>
+    ${action ? `<div class="match-actions">${action}</div>` : ""}
+   </div>
+  `;
+ }).join("");
+}
+
+/* PRELUARE MANUALĂ DE CĂTRE MANAGER */
+async function claimMatch(id) {
+ if (!currentUser) {
+  msg("matchMessage", "Sesiunea a expirat. Autentifică-te din nou.", true);
+  return;
+ }
+
+ const match = matches.find(item => String(item.id) === String(id));
+ if (!match) return;
+
+ if (match.assigned_manager_id) {
+  msg("matchMessage", "Solicitarea a fost deja preluată de alt manager.", true);
+  await loadMatches();
+  return;
+ }
+
+ const { data, error } = await db
+  .from("matches")
+  .update({
+   assigned_manager_id:currentUser.id,
+   assigned_at:new Date().toISOString()
+  })
+  .eq("id", id)
+  .is("assigned_manager_id", null)
+  .select("id");
+
+ if (error) {
+  msg("matchMessage", "Nu s-a putut prelua solicitarea: " + error.message, true);
+  return;
+ }
+
+ if (!data || !data.length) {
+  msg("matchMessage", "Solicitarea a fost preluată între timp de alt manager.", true);
+  await loadMatches();
+  return;
+ }
+
+ msg("matchMessage", "Solicitarea a fost atribuită contului tău.");
+ await loadMatches();
+}
+
+/* RENUNȚARE LA SOLICITARE */
+async function releaseMatch(id) {
+ if (!currentUser) return;
+
+ const confirmed = confirm("Dorești să renunți la această solicitare?");
+ if (!confirmed) return;
+
+ const { error } = await db
+  .from("matches")
+  .update({
+   assigned_manager_id:null,
+   assigned_at:null
+  })
+  .eq("id", id)
+  .eq("assigned_manager_id", currentUser.id);
+
+ if (error) {
+  msg("matchMessage", "Nu s-a putut elibera solicitarea: " + error.message, true);
+  return;
+ }
+
+ msg("matchMessage", "Solicitarea a fost eliberată.");
+ await loadMatches();
+}
+
+/* PROGRAMARE MANUALĂ - SALVARE ÎN SUPABASE */
+async function saveMatch() {
+ const one = document.getElementById("matchOne").value;
+ const two = document.getElementById("matchTwo").value;
+ const date = document.getElementById("matchDate").value;
+ const country = document.getElementById("matchCountry").value;
+ const language = document.getElementById("matchLanguage").value;
+
+ if (!one || !two || !date) {
+  msg("matchMessage", "Completează creatorii și data.", true);
+  return;
+ }
+
+ if (one === two) {
+  msg("matchMessage", "Alege doi creatori diferiți.", true);
+  return;
+ }
+
+ const creatorOne = creators.find(item => String(item.id) === one);
+ const creatorTwo = creators.find(item => String(item.id) === two);
+
+ if (!creatorOne || !creatorTwo) {
+  msg("matchMessage", "Nu am putut identifica ambii creatori.", true);
+  return;
+ }
+
+ const scheduledAt = new Date(date).toISOString();
+
+ if (new Date(scheduledAt).getTime() <= Date.now()) {
+  msg("matchMessage", "Data meciului trebuie să fie în viitor.", true);
+  return;
+ }
+
+ const { error } = await db.from("matches").insert({
+  creator_one_id:creatorOne.id,
+  creator_two_id:creatorTwo.id,
+  requested_tiktok_username:null,
+  scheduled_at:scheduledAt,
+  country:country,
+  language:language,
+  status:"scheduled"
+ });
+
+ if (error) {
+  msg("matchMessage", "Nu s-a putut salva meciul: " + error.message, true);
+  return;
+ }
+
+ document.getElementById("matchOne").value = "";
+ document.getElementById("matchTwo").value = "";
+ document.getElementById("matchDate").value = "";
+
+ msg("matchMessage", "Meciul a fost salvat în Supabase și este vizibil managerilor.");
+ await loadMatches();
+}
+
+/* ACTUALIZARE AUTOMATĂ */
+function startMatchesAutoRefresh() {
+ stopMatchesAutoRefresh();
+ matchesRefreshTimer = setInterval(() => {
+  if (currentUser) loadMatches();
+ }, MATCH_REFRESH_MS);
+}
+
+function stopMatchesAutoRefresh() {
+ if (matchesRefreshTimer) {
+  clearInterval(matchesRefreshTimer);
+  matchesRefreshTimer = null;
+ }
+}
+
+/* VORTYX AI */
+async function askAI() {
+ const question = document.getElementById("aiQuestion").value.trim();
+ if (!question) return;
+
+ const output = document.getElementById("aiAnswer");
+ output.textContent = "VORTYX AI procesează...";
+
+ try {
+  const response = await fetch(AI_URL, {
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({ message:question })
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Eroare AI");
+  output.textContent = result.answer || "Nu am primit un răspuns.";
+
+ } catch (error) {
+  output.textContent = "Eroare VORTYX AI: " + error.message;
+ }
+}
+
+/* SCHIMBARE PAROLĂ */
+async function changePassword() {
+ const password = prompt("Introdu noua parolă (minimum 6 caractere):");
+ if (!password) return;
+
+ if (password.length < 6) {
+  alert("Parola trebuie să aibă minimum 6 caractere.");
+  return;
+ }
+
+ const { error } = await db.auth.updateUser({ password });
+ alert(error ? error.message : "Parola a fost schimbată.");
+}
+
+/* EVENIMENTE AUTENTIFICARE */
+db.auth.onAuthStateChange((event) => {
+ if (event === "SIGNED_OUT") {
+  stopMatchesAutoRefresh();
+  currentUser = null;
+  currentRole = null;
+  document.getElementById("app").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+ }
+});
+
+/* PORNIRE APLICAȚIE */
+checkSession();
+</script>
+
+</body>
+</html>
