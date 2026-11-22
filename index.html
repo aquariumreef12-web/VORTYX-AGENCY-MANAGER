@@ -20,6 +20,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-seri
 button,input,select,textarea{font:inherit}
 button{border:0;border-radius:9px;padding:11px 15px;color:white;background:var(--purple);cursor:pointer}
 button:hover{filter:brightness(1.15)}
+button:disabled{opacity:.5;cursor:not-allowed}
 button.secondary{background:#302443}
 button.danger{background:#9d2945}
 input,select,textarea{
@@ -291,6 +292,20 @@ tr:hover td{background:#ffffff05}
     </div>
 
     <button onclick="importCreators()" style="margin-top:12px">Importă fișierul</button>
+
+    <button
+     id="deleteImportedButton"
+     onclick="deleteImportedCreators()"
+     class="danger"
+     style="margin-top:12px;margin-left:8px">
+     Șterge lista importată din Excel
+    </button>
+
+    <div class="small-note">
+     Această operațiune șterge numai creatorii importați prin Excel/CSV.
+     Creatorii adăugați manual nu sunt afectați.
+    </div>
+
     <div id="importMessage" class="message"></div>
    </div>
   </section>
@@ -407,7 +422,7 @@ tr:hover td{background:#ffffff05}
 
 /* CONFIGURARE SUPABASE */
 const SUPABASE_URL = "https://ujtqbksmdzgllhxrznrc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdHFia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqdGxia3NtZHpnbGxoeHJ6bnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ2Nzc4NjIsImV4cCI6MjExMDI1Mzg2Mn0.InPyZ6PqqOo1DTm5aA9VWH0n66lmBei0O3c_PxM8JHI";
 const AI_URL = "https://vortyx-ai-engine-2026.aquarium-reef12.workers.dev/api/chat";
 
 if (!window.supabase) {
@@ -693,7 +708,6 @@ function renderCreators() {
   return `
    <tr>
     <td>${esc(creator.name)}</td>
-
     <td>
      ${creator.tiktok
       ? `<a style="color:var(--neon)" target="_blank" rel="noopener"
@@ -702,11 +716,9 @@ function renderCreators() {
          </a>`
       : "—"}
     </td>
-
     <td>${esc(countryLabel(creator.country))}</td>
     <td>${esc(managerName(creator.manager))}</td>
     <td><span class="status">${esc(creator.status)}</span></td>
-
     <td>
      <label class="contact-check ${creator.contacted ? "contacted" : "not-contacted"}">
       <input type="checkbox"
@@ -715,7 +727,6 @@ function renderCreators() {
       ${creator.contacted ? "Contactat" : "De contactat"}
      </label>
     </td>
-
     <td>${esc(contactedManager)}</td>
     <td>${esc(contactDate)}</td>
    </tr>
@@ -940,10 +951,7 @@ async function addCreator() {
   tiktok_username:username,
   tiktok_url:"https://www.tiktok.com/@" + username,
   whatsapp:null,
-
-  /* country_id este UUID: nu introducem RO sau DE aici */
   country_id:null,
-
   manager_id:document.getElementById("newManager").value || null,
   language:document.getElementById("newLanguage").value,
   status:document.getElementById("newStatus").value,
@@ -1036,13 +1044,8 @@ async function importCreators() {
     tiktok_username:username,
     tiktok_url:"https://www.tiktok.com/@" + username,
     whatsapp:null,
-
-    /* Nu folosim codul RO/DE într-o coloană UUID */
     country_id:null,
-
-    /* Importurile rămân fără manager pentru repartizare manuală */
     manager_id:null,
-
     language:null,
     status:String(row[1] || "Available"),
     created_at:new Date().toISOString(),
@@ -1051,7 +1054,6 @@ async function importCreators() {
     contacted:false,
     contacted_by:null,
     contacted_at:null,
-
     import_metadata:{
      category:row[2] || "Regular",
      extra4:row[3] ?? null,
@@ -1071,7 +1073,6 @@ async function importCreators() {
    return;
   }
 
-  /* Inserare în loturi pentru fișiere mari */
   const batchSize = 100;
   let imported = 0;
 
@@ -1106,6 +1107,81 @@ async function importCreators() {
 
  } catch (error) {
   msg("importMessage", "Eroare la citirea fișierului: " + error.message, true);
+ }
+}
+
+/* ȘTERGERE CREATORI IMPORTAȚI DIN EXCEL / CSV */
+async function deleteImportedCreators() {
+ if (!isAdmin()) {
+  msg("importMessage", "Doar administratorul poate șterge creatorii importați.", true);
+  return;
+ }
+
+ const button = document.getElementById("deleteImportedButton");
+
+ if (button) button.disabled = true;
+
+ try {
+  msg("importMessage", "Se verifică lista importată...");
+
+  const { count, error:countError } = await db
+   .from("creators")
+   .select("id", { count:"exact", head:true })
+   .not("import_metadata", "is", null);
+
+  if (countError) throw countError;
+
+  if (!count) {
+   msg("importMessage", "Nu există creatori importați din Excel/CSV.");
+   return;
+  }
+
+  const confirmed = confirm(
+   "ATENȚIE!\n\n" +
+   "Au fost găsiți " + count + " creatori importați din Excel/CSV.\n\n" +
+   "Vor fi șterși numai acești creatori.\n\n" +
+   "Creatorii adăugați manual NU vor fi șterși.\n" +
+   "Managerii și conturile acestora NU vor fi afectate.\n\n" +
+   "Dorești să continui?"
+  );
+
+  if (!confirmed) {
+   msg("importMessage", "Ștergerea a fost anulată.");
+   return;
+  }
+
+  msg("importMessage", "Se șterg creatorii importați...");
+
+  const { data, error } = await db
+   .from("creators")
+   .delete()
+   .not("import_metadata", "is", null)
+   .select("id");
+
+  if (error) throw error;
+
+  const deleted = data?.length || 0;
+
+  await loadCreators();
+
+  msg(
+   "importMessage",
+   "Operațiune finalizată. Au fost șterși " +
+   deleted + " creatori importați din Excel/CSV."
+  );
+
+ } catch (error) {
+  console.error("deleteImportedCreators:", error);
+
+  msg(
+   "importMessage",
+   "Eroare la ștergere: " + error.message +
+   ". Verifică permisiunile DELETE și politicile RLS din Supabase.",
+   true
+  );
+
+ } finally {
+  if (button) button.disabled = false;
  }
 }
 
@@ -1181,10 +1257,7 @@ function showSection(id, button) {
  document.getElementById("pageTitle").textContent = titles[id] || id;
 }
 
-/* LIVE MATCHES
-   Această versiune păstrează meciurile în sesiunea paginii.
-   Salvarea permanentă necesită tabelul dedicat din Supabase.
-*/
+/* LIVE MATCHES */
 function saveMatch() {
  const one = document.getElementById("matchOne").value;
  const two = document.getElementById("matchTwo").value;
