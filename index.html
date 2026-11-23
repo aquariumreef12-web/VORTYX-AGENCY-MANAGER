@@ -131,6 +131,8 @@ tr:hover td{background:#ffffff05}
    <button onclick="showSection('agencyCreators',this)">Creatori agenție</button>
    <button onclick="showSection('matches',this)">Meciuri</button>
    <button onclick="showSection('managers',this)">Managers</button>
+   <button onclick="showSection('tasks',this)">Sarcini manageri</button>
+   <button onclick="showSection('activityLog',this)">Activitate echipă</button>
    <button onclick="showSection('statistics',this)">Statistics</button>
    <button onclick="showSection('ai',this)">VORTYX AI</button>
    <button onclick="showSection('settings',this)">Settings</button>
@@ -194,7 +196,7 @@ tr:hover td{background:#ffffff05}
       <thead>
        <tr>
         <th>Nume</th><th>TikTok</th><th>Țară</th><th>Manager asignat</th>
-        <th>Status</th><th>Contactare</th><th>Contactat de</th><th>Data contactării</th>
+        <th>Status</th><th>Contactare</th><th>Contactat de</th><th>Data contactării</th><th>Profil</th>
        </tr>
       </thead>
       <tbody id="creatorTable">
@@ -339,7 +341,106 @@ tr:hover td{background:#ffffff05}
     </div>
     <div id="managerMessage" class="message"></div>
    </div>
-  </section>
+  </section>  
+
+<section id="tasks" class="section">
+  <div class="panel">
+    <h2>Sarcini manageri</h2>
+    <p class="muted">Administratorul poate atribui sarcini. Fiecare manager își actualizează propriile sarcini.</p>
+
+    <div id="adminTaskPanel" class="panel">
+      <h3>Alocă o sarcină nouă</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Manager responsabil</label>
+          <select id="taskManager"></select>
+        </div>
+        <div class="field">
+          <label>Titlu sarcină</label>
+          <input id="taskTitle" placeholder="Ex: Contactare 10 creatori">
+        </div>
+        <div class="field">
+          <label>Prioritate</label>
+          <select id="taskPriority">
+            <option value="normal">Normală</option>
+            <option value="low">Scăzută</option>
+            <option value="high">Ridicată</option>
+            <option value="urgent">Urgentă</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Termen limită</label>
+          <input id="taskDue" type="datetime-local">
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Descriere</label>
+        <textarea id="taskDescription" rows="3" placeholder="Detalii despre sarcină..."></textarea>
+      </div>
+      <button onclick="createManagerTask()">Atribuie sarcina</button>
+      <div id="taskMessage" class="message"></div>
+    </div>
+
+    <div class="toolbar">
+      <select id="taskStatusFilter" onchange="loadManagerTasks()">
+        <option value="all">Toate sarcinile</option>
+        <option value="pending">În așteptare</option>
+        <option value="in_progress">În lucru</option>
+        <option value="completed">Finalizate</option>
+        <option value="cancelled">Anulate</option>
+      </select>
+      <button onclick="loadManagerTasks()">Reîncarcă sarcinile</button>
+    </div>
+    <div id="tasksList"></div>
+  </div>
+</section>
+
+<section id="activityLog" class="section">
+  <div class="panel">
+    <h2>Activitatea echipei</h2>
+    <p class="muted">Istoricul acțiunilor înregistrate în aplicație.</p>
+    <div class="toolbar">
+      <select id="activityManagerFilter" onchange="loadManagerActivity()">
+        <option value="all">Toți managerii</option>
+      </select>
+      <button onclick="loadManagerActivity()">Reîncarcă activitatea</button>
+      <button class="secondary" onclick="exportManagerActivity()">Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table style="min-width:750px">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Manager</th>
+            <th>Activitate</th>
+            <th>Detalii</th>
+          </tr>
+        </thead>
+        <tbody id="activityTable">
+          <tr><td colspan="4" class="empty">Se încarcă...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="creatorProfile" class="section">
+  <div class="panel">
+    <button class="secondary" onclick="showSection('creators',document.querySelector('.nav button[onclick*=\\'creators\\']'))">← Înapoi la creatori</button>
+    <h2 id="profileCreatorName" style="margin-top:18px">Profil creator</h2>
+    <div id="profileCreatorDetails" class="muted"></div>
+  </div>
+  <div class="panel">
+    <h2>Notițe despre creator</h2>
+    <textarea id="creatorNoteInput" rows="4" placeholder="Scrie o observație, discuție, preferință sau următorul pas..."></textarea>
+    <button onclick="addCreatorNote()" style="margin-top:10px">Salvează notița</button>
+    <div id="creatorNoteMessage" class="message"></div>
+  </div>
+  <div class="panel">
+    <h2>Istoric notițe</h2>
+    <div id="creatorNotesList"></div>
+  </div>
+</section>
 
   <section id="statistics" class="section">
    <div class="grid">
@@ -552,6 +653,8 @@ async function checkSession() {
   document.getElementById("addCreatorPanel").classList.toggle("hidden", !admin);
   document.getElementById("importPanel").classList.toggle("hidden", !admin);
   document.getElementById("addAgencyCreatorPanel").classList.toggle("hidden", !admin);
+  document.getElementById("adminTaskPanel").classList.toggle("hidden", !admin);
+  document.getElementById("activityManagerFilter").classList.toggle("hidden", !admin);
 
   await loadAll();
   startMatchesAutoRefresh();
@@ -571,6 +674,7 @@ async function loadAll() {
  await loadMatches();
  refreshDashboard();
  populateCreatorSelects();
+ populateTaskManagers();
 }
 
 async function loadCreators() {
@@ -655,9 +759,10 @@ function renderCreators() {
     </td>
     <td>${esc(contactedManager)}</td>
     <td>${esc(contactDate)}</td>
+    <td><button class="secondary" onclick="openCreatorProfile('${esc(row.id)}')">Profil</button></td>
    </tr>
   `;
- }).join("") || `<tr><td colspan="8" class="empty">Nu există creatori pentru filtrele selectate.</td></tr>`;
+ }).join("") || `<tr><td colspan="9" class="empty">Nu există creatori pentru filtrele selectate.</td></tr>`;
 }
 
 async function updateContacted(id, checked) {
@@ -681,6 +786,11 @@ async function updateContacted(id, checked) {
  }
 
  Object.assign(row, payload);
+ await logManagerActivity(
+  checked ? "creator_contacted" : "creator_contact_reset",
+  checked ? "A marcat creatorul " + (row.tiktok_username ? "@" + normalizeUsername(row.tiktok_username) : row.full_name || "") + " ca fiind contactat." : "A anulat marcarea contactării pentru " + (row.tiktok_username ? "@" + normalizeUsername(row.tiktok_username) : row.full_name || "") + ".",
+  id
+ );
  msg("creatorMessage", checked
   ? "Contactarea a fost salvată împreună cu managerul și data/ora."
   : "Contactarea a fost anulată. Evidența managerului și data au fost șterse.");
@@ -727,6 +837,7 @@ async function loadManagers() {
    .join("");
 
  renderCreators();
+ populateTaskManagers();
 }
 
 function renderManagers() {
@@ -1117,23 +1228,406 @@ async function deleteAgencyCreator(id) {
  await loadAgencyCreators();
 }
 
+/* =========================================
+   VORTYX - PROFIL CREATOR, SARCINI, ACTIVITATE
+========================================= */
+
+let selectedCreatorId = null;
+let managerTasks = [];
+let managerActivities = [];
+
+function getManagerLabel(id) {
+  return managerName(id) || "Manager necunoscut";
+}
+
+async function logManagerActivity(type, description, creatorId = null, targetManagerId = null) {
+  if (!currentUser) return;
+
+  const managerId = targetManagerId || currentUser.id;
+
+  const { error } = await db.from("manager_activity").insert({
+    manager_id: managerId,
+    actor_id: currentUser.id,
+    activity_type: type,
+    description: description,
+    creator_id: creatorId ? String(creatorId) : null,
+    metadata: {}
+  });
+
+  if (error) console.error("logManagerActivity:", error);
+}
+
+/* PROFIL CREATOR */
+
+function openCreatorProfile(id) {
+  const creator = creators.find(item => String(item.id) === String(id));
+  if (!creator) return;
+
+  selectedCreatorId = creator.id;
+
+  document.getElementById("profileCreatorName").textContent =
+    creator.full_name || creator.tiktok_username || "Creator";
+
+  const username = normalizeUsername(creator.tiktok_username || "");
+  document.getElementById("profileCreatorDetails").innerHTML = `
+    <p>Username: ${username ? `<a style="color:var(--neon)" target="_blank" rel="noopener" href="https://www.tiktok.com/@${encodeURIComponent(username)}">@${esc(username)}</a>` : "—"}</p>
+    <p>Țară: ${esc(countryLabel(creator.country || creator.country_id))}</p>
+    <p>Manager: ${esc(managerName(creator.manager_id))}</p>
+    <p>Status: ${esc(creator.status || "—")}</p>
+    <p>Contactat: ${creator.contacted ? "Da" : "Nu"}</p>
+    <p>Contactat de: ${esc(creator.contacted_by ? managerName(creator.contacted_by) : "—")}</p>
+    <p>Data contactării: ${esc(formatDate(creator.contacted_at))}</p>
+  `;
+
+  document.getElementById("creatorNoteInput").value = "";
+  msg("creatorNoteMessage", "");
+  document.getElementById("creatorNotesList").innerHTML =
+    '<div class="empty">Se încarcă notițele...</div>';
+
+  showSection("creatorProfile", null);
+  loadCreatorNotes();
+}
+
+async function loadCreatorNotes() {
+  if (!selectedCreatorId) return;
+
+  const { data, error } = await db
+    .from("creator_notes")
+    .select("*")
+    .eq("creator_id", String(selectedCreatorId))
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("creatorNotesList").innerHTML =
+      `<p class="error">${esc(error.message)}</p>`;
+    return;
+  }
+
+  const rows = data || [];
+
+  document.getElementById("creatorNotesList").innerHTML = rows.map(note => `
+    <div class="match-card">
+      <div class="match-card-header">
+        <strong>${esc(managerName(note.manager_id))}</strong>
+        <span class="small-note">${esc(formatDate(note.created_at))}</span>
+      </div>
+      <p style="white-space:pre-wrap">${esc(note.note)}</p>
+    </div>
+  `).join("") || '<div class="empty">Nu există notițe pentru acest creator.</div>';
+}
+
+async function addCreatorNote() {
+  if (!currentUser || !selectedCreatorId) return;
+
+  const note = document.getElementById("creatorNoteInput").value.trim();
+  if (!note) {
+    msg("creatorNoteMessage", "Scrie mai întâi o notiță.", true);
+    return;
+  }
+
+  const { error } = await db.from("creator_notes").insert({
+    creator_id: String(selectedCreatorId),
+    manager_id: currentUser.id,
+    note
+  });
+
+  if (error) {
+    msg("creatorNoteMessage", "Nu s-a putut salva notița: " + error.message, true);
+    return;
+  }
+
+  document.getElementById("creatorNoteInput").value = "";
+  msg("creatorNoteMessage", "Notița a fost salvată.");
+  await logManagerActivity("creator_note", "A adăugat o notiță la profilul unui creator.", selectedCreatorId);
+  await loadCreatorNotes();
+}
+
+/* SARCINI MANAGERI */
+
+function populateTaskManagers() {
+  const select = document.getElementById("taskManager");
+  const filter = document.getElementById("activityManagerFilter");
+  if (!select || !filter) return;
+
+  const managerList = managers.filter(item =>
+    String(item.role).toLowerCase() === "manager"
+  );
+
+  select.innerHTML = '<option value="">Selectează managerul</option>' +
+    managerList.map(item =>
+      `<option value="${esc(item.id)}">${esc(item.display_name || "Nume neconfigurat")}</option>`
+    ).join("");
+
+  const current = filter.value || "all";
+  filter.innerHTML = '<option value="all">Toți managerii</option>' +
+    managerList.map(item =>
+      `<option value="${esc(item.id)}">${esc(item.display_name || "Nume neconfigurat")}</option>`
+    ).join("");
+
+  if ([...filter.options].some(option => option.value === current)) {
+    filter.value = current;
+  }
+}
+
+async function createManagerTask() {
+  if (!isAdmin()) {
+    msg("taskMessage", "Doar administratorul poate atribui sarcini.", true);
+    return;
+  }
+
+  const managerId = document.getElementById("taskManager").value;
+  const title = document.getElementById("taskTitle").value.trim();
+  const description = document.getElementById("taskDescription").value.trim();
+  const priority = document.getElementById("taskPriority").value;
+  const dueValue = document.getElementById("taskDue").value;
+
+  if (!managerId || !title) {
+    msg("taskMessage", "Selectează managerul și introdu titlul sarcinii.", true);
+    return;
+  }
+
+  const payload = {
+    manager_id: managerId,
+    created_by: currentUser.id,
+    title,
+    description: description || null,
+    priority,
+    status: "pending",
+    due_at: dueValue ? new Date(dueValue).toISOString() : null
+  };
+
+  const { error } = await db.from("manager_tasks").insert(payload);
+
+  if (error) {
+    msg("taskMessage", "Eroare la atribuirea sarcinii: " + error.message, true);
+    return;
+  }
+
+  await logManagerActivity(
+    "task_assigned",
+    "Administratorul a atribuit sarcina: " + title,
+    null,
+    managerId
+  );
+
+  document.getElementById("taskTitle").value = "";
+  document.getElementById("taskDescription").value = "";
+  document.getElementById("taskDue").value = "";
+
+  msg("taskMessage", "Sarcina a fost atribuită managerului.");
+  await loadManagerTasks();
+}
+
+async function loadManagerTasks() {
+  const filter = document.getElementById("taskStatusFilter")?.value || "all";
+
+  let query = db.from("manager_tasks").select("*").order("created_at", {
+    ascending: false
+  });
+
+  if (!isAdmin()) {
+    query = query.eq("manager_id", currentUser.id);
+  }
+
+  if (filter !== "all") {
+    query = query.eq("status", filter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    document.getElementById("tasksList").innerHTML =
+      `<p class="error">Eroare la încărcarea sarcinilor: ${esc(error.message)}</p>`;
+    return;
+  }
+
+  managerTasks = data || [];
+
+  document.getElementById("tasksList").innerHTML = managerTasks.map(task => {
+    const canEdit = isAdmin() || String(task.manager_id) === String(currentUser.id);
+
+    return `
+      <div class="match-card">
+        <div class="match-card-header">
+          <strong>${esc(task.title)}</strong>
+          <span class="status">${esc(task.status)}</span>
+        </div>
+        <div class="match-details">
+          <div>Manager: ${esc(getManagerLabel(task.manager_id))}</div>
+          <div>Prioritate: ${esc(task.priority)}</div>
+          <div>Termen: ${esc(formatDate(task.due_at))}</div>
+          <div>Creată: ${esc(formatDate(task.created_at))}</div>
+        </div>
+        ${task.description ? `<p style="white-space:pre-wrap">${esc(task.description)}</p>` : ""}
+        ${canEdit ? `
+          <div class="form-grid" style="margin-top:12px">
+            <div class="field">
+              <label>Actualizează statusul</label>
+              <select id="taskStatus_${esc(task.id)}">
+                <option value="pending" ${task.status === "pending" ? "selected" : ""}>În așteptare</option>
+                <option value="in_progress" ${task.status === "in_progress" ? "selected" : ""}>În lucru</option>
+                <option value="completed" ${task.status === "completed" ? "selected" : ""}>Finalizată</option>
+                ${isAdmin() ? `<option value="cancelled" ${task.status === "cancelled" ? "selected" : ""}>Anulată</option>` : ""}
+              </select>
+            </div>
+            <div class="field" style="align-self:end">
+              <button onclick="updateManagerTask('${esc(task.id)}')">Salvează statusul</button>
+            </div>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  }).join("") || '<div class="empty">Nu există sarcini pentru filtrul selectat.</div>';
+}
+
+async function updateManagerTask(id) {
+  const task = managerTasks.find(item => String(item.id) === String(id));
+  if (!task) return;
+
+  if (!isAdmin() && String(task.manager_id) !== String(currentUser.id)) {
+    alert("Nu poți modifica sarcina altui manager.");
+    return;
+  }
+
+  const status = document.getElementById("taskStatus_" + id)?.value;
+  if (!status) return;
+
+  const payload = {
+    status,
+    updated_at: new Date().toISOString(),
+    completed_at: status === "completed" ? new Date().toISOString() : null
+  };
+
+  const { error } = await db.from("manager_tasks")
+    .update(payload)
+    .eq("id", id);
+
+  if (error) {
+    msg("taskMessage", "Nu s-a putut actualiza sarcina: " + error.message, true);
+    return;
+  }
+
+  await logManagerActivity(
+    "task_status",
+    "A actualizat statusul sarcinii „" + task.title + "” la " + status + ".",
+    null,
+    task.manager_id
+  );
+
+  msg("taskMessage", "Statusul sarcinii a fost actualizat.");
+  await loadManagerTasks();
+}
+
+/* JURNAL ACTIVITATE */
+
+async function loadManagerActivity() {
+  let query = db.from("manager_activity")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  const managerFilter = document.getElementById("activityManagerFilter")?.value || "all";
+
+  if (!isAdmin()) {
+    query = query.eq("manager_id", currentUser.id);
+  } else if (managerFilter !== "all") {
+    query = query.eq("manager_id", managerFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    document.getElementById("activityTable").innerHTML =
+      `<tr><td colspan="4" class="empty error">${esc(error.message)}</td></tr>`;
+    return;
+  }
+
+  managerActivities = data || [];
+
+  document.getElementById("activityTable").innerHTML = managerActivities.map(item => `
+    <tr>
+      <td>${esc(formatDate(item.created_at))}</td>
+      <td>${esc(getManagerLabel(item.manager_id))}</td>
+      <td>${esc(item.activity_type)}</td>
+      <td>${esc(item.description)}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="4" class="empty">Nu există activitate înregistrată.</td></tr>';
+}
+
+function exportManagerActivity() {
+  if (!managerActivities.length) {
+    alert("Nu există activități de exportat.");
+    return;
+  }
+
+  const headers = ["Data", "Manager", "Tip activitate", "Descriere"];
+  const rows = managerActivities.map(item => [
+    formatDate(item.created_at),
+    getManagerLabel(item.manager_id),
+    item.activity_type,
+    item.description
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(value =>
+      '"' + String(value ?? "").replace(/"/g, '""') + '"'
+    ).join(","))
+    .join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "VORTYX_activitate_manageri.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 /* NAVIGARE */
 function showSection(id, button) {
- document.querySelectorAll(".section").forEach(section => section.classList.remove("active"));
- document.getElementById(id).classList.add("active");
+ const section = document.getElementById(id);
+ if (!section) {
+  console.warn("Secțiunea nu există:", id);
+  return;
+ }
+
+ document.querySelectorAll(".section").forEach(item => item.classList.remove("active"));
+ section.classList.add("active");
 
  document.querySelectorAll(".nav button").forEach(item => item.classList.remove("active"));
  if (button) button.classList.add("active");
 
  const titles = {
-  dashboard:"Dashboard", creators:"Creators", agencyCreators:"Creatori agenție", matches:"Meciuri",
-  managers:"Managers", statistics:"Statistics", ai:"VORTYX AI", settings:"Settings"
+  dashboard:"Dashboard",
+  creators:"Creators",
+  agencyCreators:"Creatori agenție",
+  matches:"Meciuri",
+  managers:"Managers",
+  tasks:"Sarcini manageri",
+  activityLog:"Activitate echipă",
+  creatorProfile:"Profil creator",
+  statistics:"Statistics",
+  ai:"VORTYX AI",
+  settings:"Settings"
  };
 
  document.getElementById("pageTitle").textContent = titles[id] || id;
 
- if (id === "matches") { loadMatches(); loadAgencyCreators(); }
+ if (id === "matches") {
+  loadMatches();
+  loadAgencyCreators();
+ }
  if (id === "agencyCreators") loadAgencyCreators();
+ if (id === "tasks") loadManagerTasks();
+ if (id === "activityLog") loadManagerActivity();
+ if (id === "creatorProfile") loadCreatorNotes();
+ if (id === "managers") {
+  populateTaskManagers();
+  loadManagers();
+ }
 }
 
 /* =========================================
@@ -1301,6 +1795,7 @@ async function claimMatch(id) {
  }
 
  msg("matchMessage", "Solicitarea a fost atribuită contului tău.");
+ await logManagerActivity("match_claimed", "A preluat o solicitare de meci LIVE.");
  await loadMatches();
 }
 
@@ -1326,6 +1821,7 @@ async function releaseMatch(id) {
  }
 
  msg("matchMessage", "Solicitarea a fost eliberată.");
+ await logManagerActivity("match_released", "A eliberat o solicitare de meci LIVE.");
  await loadMatches();
 }
 
@@ -1360,6 +1856,7 @@ async function saveMatch() {
  document.getElementById("matchTwoName").value = "";
  document.getElementById("matchDate").value = "";
  msg("matchMessage", "Meciul a fost salvat în Supabase și este vizibil managerilor.");
+ await logManagerActivity("match_created", "A programat un meci pentru " + (creatorOne.full_name || creatorOne.tiktok_username || "creator") + " VS " + twoName + ".");
  await loadMatches();
 }
 
