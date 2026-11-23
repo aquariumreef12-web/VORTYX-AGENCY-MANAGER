@@ -128,7 +128,8 @@ tr:hover td{background:#ffffff05}
   <nav class="nav">
    <button class="active" onclick="showSection('dashboard',this)">Dashboard</button>
    <button onclick="showSection('creators',this)">Creators</button>
-   <button onclick="showSection('matches',this)">LIVE Matches</button>
+   <button onclick="showSection('agencyCreators',this)">Creatori agenție</button>
+   <button onclick="showSection('matches',this)">Meciuri</button>
    <button onclick="showSection('managers',this)">Managers</button>
    <button onclick="showSection('statistics',this)">Statistics</button>
    <button onclick="showSection('ai',this)">VORTYX AI</button>
@@ -259,6 +260,32 @@ tr:hover td{background:#ffffff05}
    </div>
   </section>
 
+  <section id="agencyCreators" class="section">
+   <div class="panel">
+    <h2>Creatori agenție</h2>
+    <p class="muted">Listă separată de baza creatorilor importați pentru recrutare. Creatorii de aici pot fi selectați ca Creator 1 în meciuri.</p>
+    <div class="toolbar">
+     <input id="agencyCreatorSearch" placeholder="Caută creator agenție..." oninput="renderAgencyCreators()">
+     <button onclick="loadAgencyCreators()">Reîncarcă</button>
+    </div>
+    <div class="table-wrap">
+     <table style="min-width:650px"><thead><tr><th>Nume</th><th>Username TikTok</th><th>Țară</th><th>Acțiuni</th></tr></thead>
+      <tbody id="agencyCreatorTable"><tr><td colspan="4" class="empty">Se încarcă...</td></tr></tbody>
+     </table>
+    </div>
+    <div id="agencyCreatorMessage" class="message"></div>
+   </div>
+   <div class="panel" id="addAgencyCreatorPanel">
+    <h2>Adaugă creator în agenție</h2>
+    <div class="form-grid">
+     <div class="field"><label>Nume creator</label><input id="agencyNewName" placeholder="Nume creator"></div>
+     <div class="field"><label>Username TikTok</label><input id="agencyNewTikTok" placeholder="@username"></div>
+     <div class="field"><label>Țară</label><select id="agencyNewCountry"><option value="RO">România</option><option value="DE">Germania</option></select></div>
+    </div>
+    <button onclick="addAgencyCreator()" style="margin-top:14px">Adaugă creator</button>
+   </div>
+  </section>
+
   <section id="matches" class="section">
    <div class="panel">
     <h2>LIVE Matches</h2>
@@ -278,8 +305,8 @@ tr:hover td{background:#ffffff05}
    <div class="panel">
     <h2>Programează manual un meci</h2>
     <div class="form-grid">
-     <div class="field"><label>Creator 1</label><select id="matchOne"></select></div>
-     <div class="field"><label>Creator 2</label><select id="matchTwo"></select></div>
+     <div class="field"><label>Creator 1 – din Creatori agenție</label><select id="matchOne"></select></div>
+     <div class="field"><label>Creator 2 – introducere manuală</label><input id="matchTwoName" placeholder="Numele adversarului"></div>
      <div class="field"><label>Data și ora</label><input type="datetime-local" id="matchDate"></div>
      <div class="field">
       <label>Țara</label>
@@ -372,6 +399,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let currentRole = null;
 let creators = [];
+let agencyCreators = [];
 let managers = [];
 let matches = [];
 let loadingSession = false;
@@ -523,6 +551,7 @@ async function checkSession() {
   const admin = isAdmin();
   document.getElementById("addCreatorPanel").classList.toggle("hidden", !admin);
   document.getElementById("importPanel").classList.toggle("hidden", !admin);
+  document.getElementById("addAgencyCreatorPanel").classList.toggle("hidden", !admin);
 
   await loadAll();
   startMatchesAutoRefresh();
@@ -538,6 +567,7 @@ async function checkSession() {
 async function loadAll() {
  await loadManagers();
  await loadCreators();
+ await loadAgencyCreators();
  await loadMatches();
  refreshDashboard();
  populateCreatorSelects();
@@ -1011,15 +1041,80 @@ function refreshDashboard() {
   ).join("") || "Nu există date.";
 }
 
-/* SELECTOARE CREATORI */
+/* SELECTOR CREATORI AGENȚIE PENTRU MECIURI */
 function populateCreatorSelects() {
- ["matchOne","matchTwo"].forEach(id => {
-  document.getElementById(id).innerHTML =
-   '<option value="">Selectează creator</option>' +
-   creators.map(item =>
-    `<option value="${esc(item.id)}">${esc(item.tiktok_username || item.full_name || "Creator")}</option>`
-   ).join("");
- });
+ const select = document.getElementById("matchOne");
+ if (!select) return;
+ const current = select.value;
+ select.innerHTML = '<option value="">Selectează creator din agenție</option>' +
+  agencyCreators.map(item => `<option value="${esc(item.id)}">${esc(item.full_name || item.tiktok_username || "Creator")}${item.tiktok_username ? " (@" + esc(normalizeUsername(item.tiktok_username)) + ")" : ""}</option>`).join("");
+ if (agencyCreators.some(item => String(item.id) === String(current))) select.value = current;
+}
+
+async function loadAgencyCreators() {
+ const { data, error } = await db.from("agency_creators").select("*").order("full_name", {ascending:true}).limit(2000);
+ if (error) {
+  msg("agencyCreatorMessage", "Eroare la încărcarea creatorilor agenției: " + error.message, true);
+  console.error("loadAgencyCreators:", error);
+  return;
+ }
+ agencyCreators = data || [];
+ renderAgencyCreators();
+ populateCreatorSelects();
+}
+
+function renderAgencyCreators() {
+ const tbody = document.getElementById("agencyCreatorTable");
+ if (!tbody) return;
+ const q = (document.getElementById("agencyCreatorSearch")?.value || "").trim().toLowerCase();
+ const rows = agencyCreators.filter(item => [item.full_name,item.tiktok_username,item.country].join(" ").toLowerCase().includes(q));
+ if (!rows.length) {
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Nu există creatori în agenție.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(item => `<tr><td>${esc(item.full_name || "—")}</td><td>${item.tiktok_username ? "@" + esc(normalizeUsername(item.tiktok_username)) : "—"}</td><td>${esc(countryLabel(item.country))}</td><td><button class="secondary" onclick="editAgencyCreator('${esc(item.id)}')">Editează</button> <button class="danger" onclick="deleteAgencyCreator('${esc(item.id)}')">Șterge</button></td></tr>`).join("");
+}
+
+async function addAgencyCreator() {
+ if (!isAdmin()) { msg("agencyCreatorMessage", "Doar administratorul poate adăuga creatori.", true); return; }
+ const name = document.getElementById("agencyNewName").value.trim();
+ const username = normalizeUsername(document.getElementById("agencyNewTikTok").value);
+ const country = document.getElementById("agencyNewCountry").value;
+ if (!name && !username) { msg("agencyCreatorMessage", "Introdu numele sau username-ul TikTok.", true); return; }
+ const { error } = await db.from("agency_creators").insert({full_name:name || username, tiktok_username:username || null, country, created_by:currentUser.id});
+ if (error) { msg("agencyCreatorMessage", "Nu s-a putut adăuga creatorul: " + error.message, true); return; }
+ document.getElementById("agencyNewName").value = "";
+ document.getElementById("agencyNewTikTok").value = "";
+ msg("agencyCreatorMessage", "Creatorul a fost adăugat în agenție.");
+ await loadAgencyCreators();
+}
+
+async function editAgencyCreator(id) {
+ if (!isAdmin()) return;
+ const item = agencyCreators.find(row => String(row.id) === String(id));
+ if (!item) return;
+ const name = prompt("Nume creator:", item.full_name || "");
+ if (name === null) return;
+ const username = prompt("Username TikTok (fără @ sau cu @):", item.tiktok_username || "");
+ if (username === null) return;
+ const country = prompt("Țară: RO sau DE", item.country || "RO");
+ if (country === null) return;
+ const normalized = normalizeCountry(country);
+ if (!["RO","DE"].includes(normalized)) { alert("Țara trebuie să fie RO sau DE."); return; }
+ const { error } = await db.from("agency_creators").update({full_name:name.trim() || normalizeUsername(username),tiktok_username:normalizeUsername(username) || null,country:normalized}).eq("id",id);
+ if (error) { msg("agencyCreatorMessage", "Eroare la modificare: " + error.message, true); return; }
+ msg("agencyCreatorMessage", "Datele creatorului au fost actualizate.");
+ await loadAgencyCreators();
+}
+
+async function deleteAgencyCreator(id) {
+ if (!isAdmin()) return;
+ const item = agencyCreators.find(row => String(row.id) === String(id));
+ if (!item || !confirm(`Ștergi creatorul ${item.full_name || item.tiktok_username}? Meciurile deja salvate rămân înregistrate.`)) return;
+ const { error } = await db.from("agency_creators").delete().eq("id",id);
+ if (error) { msg("agencyCreatorMessage", "Eroare la ștergere: " + error.message, true); return; }
+ msg("agencyCreatorMessage", "Creatorul a fost șters din listă.");
+ await loadAgencyCreators();
 }
 
 /* NAVIGARE */
@@ -1031,13 +1126,14 @@ function showSection(id, button) {
  if (button) button.classList.add("active");
 
  const titles = {
-  dashboard:"Dashboard", creators:"Creators", matches:"LIVE Matches",
+  dashboard:"Dashboard", creators:"Creators", agencyCreators:"Creatori agenție", matches:"Meciuri",
   managers:"Managers", statistics:"Statistics", ai:"VORTYX AI", settings:"Settings"
  };
 
  document.getElementById("pageTitle").textContent = titles[id] || id;
 
- if (id === "matches") loadMatches();
+ if (id === "matches") { loadMatches(); loadAgencyCreators(); }
+ if (id === "agencyCreators") loadAgencyCreators();
 }
 
 /* =========================================
@@ -1061,6 +1157,8 @@ async function loadMatches() {
     requested_tiktok_username,
     creator_one_id,
     creator_two_id,
+    agency_creator_one_id,
+    creator_two_name,
     scheduled_at,
     country,
     language,
@@ -1091,11 +1189,11 @@ async function loadMatches() {
 
 function getCreatorMatchName(id) {
  if (!id) return "";
+ const agency = agencyCreators.find(item => String(item.id) === String(id));
+ if (agency) return agency.full_name || (agency.tiktok_username ? "@" + normalizeUsername(agency.tiktok_username) : "Creator agenție");
  const creator = creators.find(item => String(item.id) === String(id));
  if (!creator) return "Creator din baza de date";
- return creator.tiktok_username
-  ? "@" + normalizeUsername(creator.tiktok_username)
-  : (creator.full_name || "Creator");
+ return creator.tiktok_username ? "@" + normalizeUsername(creator.tiktok_username) : (creator.full_name || "Creator");
 }
 
 function matchStatusLabel(status) {
@@ -1123,8 +1221,8 @@ function renderMatches() {
    ? "@" + normalizeUsername(match.requested_tiktok_username)
    : "";
 
-  const firstName = requestedName || getCreatorMatchName(match.creator_one_id) || "Creator 1";
-  const secondName = getCreatorMatchName(match.creator_two_id) || "Așteaptă adversar";
+  const firstName = requestedName || getCreatorMatchName(match.agency_creator_one_id) || getCreatorMatchName(match.creator_one_id) || "Creator 1";
+  const secondName = match.creator_two_name || getCreatorMatchName(match.creator_two_id) || "Așteaptă adversar";
 
   const assigned = match.assigned_manager_id
    ? managerName(match.assigned_manager_id)
@@ -1148,7 +1246,7 @@ function renderMatches() {
   return `
    <div class="match-card">
     <div class="match-card-header">
-     <strong>${esc(firstName)}${match.creator_two_id ? " VS " + esc(secondName) : ""}</strong>
+     <strong>${esc(firstName)}${(match.creator_two_name || match.creator_two_id) ? " VS " + esc(secondName) : ""}</strong>
      <span class="status">${esc(matchStatusLabel(match.status))}</span>
     </div>
     <div class="match-details">
@@ -1234,55 +1332,33 @@ async function releaseMatch(id) {
 /* PROGRAMARE MANUALĂ - SALVARE ÎN SUPABASE */
 async function saveMatch() {
  const one = document.getElementById("matchOne").value;
- const two = document.getElementById("matchTwo").value;
+ const twoName = document.getElementById("matchTwoName").value.trim();
  const date = document.getElementById("matchDate").value;
  const country = document.getElementById("matchCountry").value;
  const language = document.getElementById("matchLanguage").value;
-
- if (!one || !two || !date) {
-  msg("matchMessage", "Completează creatorii și data.", true);
+ if (!one || !twoName || !date) {
+  msg("matchMessage", "Selectează Creator 1, introdu numele Creatorului 2 și data meciului.", true);
   return;
  }
-
- if (one === two) {
-  msg("matchMessage", "Alege doi creatori diferiți.", true);
-  return;
- }
-
- const creatorOne = creators.find(item => String(item.id) === one);
- const creatorTwo = creators.find(item => String(item.id) === two);
-
- if (!creatorOne || !creatorTwo) {
-  msg("matchMessage", "Nu am putut identifica ambii creatori.", true);
-  return;
- }
-
+ const creatorOne = agencyCreators.find(item => String(item.id) === String(one));
+ if (!creatorOne) { msg("matchMessage", "Creatorul 1 nu mai există în lista agenției. Reîncarcă lista.", true); return; }
  const scheduledAt = new Date(date).toISOString();
-
- if (new Date(scheduledAt).getTime() <= Date.now()) {
-  msg("matchMessage", "Data meciului trebuie să fie în viitor.", true);
-  return;
- }
-
+ if (new Date(scheduledAt).getTime() <= Date.now()) { msg("matchMessage", "Data meciului trebuie să fie în viitor.", true); return; }
  const { error } = await db.from("matches").insert({
-  creator_one_id:creatorOne.id,
-  creator_two_id:creatorTwo.id,
+  agency_creator_one_id:creatorOne.id,
+  creator_two_name:twoName,
+  creator_one_id:null,
+  creator_two_id:null,
   requested_tiktok_username:null,
   scheduled_at:scheduledAt,
   country:country,
   language:language,
   status:"scheduled"
  });
-
- if (error) {
-  msg("matchMessage", "Nu s-a putut salva meciul: " + error.message, true);
-  return;
- }
-
+ if (error) { msg("matchMessage", "Nu s-a putut salva meciul: " + error.message, true); return; }
  document.getElementById("matchOne").value = "";
- document.getElementById("matchTwo").value = "";
+ document.getElementById("matchTwoName").value = "";
  document.getElementById("matchDate").value = "";
-
  msg("matchMessage", "Meciul a fost salvat în Supabase și este vizibil managerilor.");
  await loadMatches();
 }
