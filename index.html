@@ -9,514 +9,187 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-
 <style>
 :root{
- --bg:#070610;
- --panel:#100d1c;
- --panel2:#171127;
- --purple:#922cff;
- --neon:#c084fc;
- --blue:#258bff;
- --text:#f8f4ff;
- --muted:#a69ab9;
- --green:#55efad;
- --red:#ff5878;
- --border:#302044;
- --glow:0 0 22px #922cff20;
+ --bg:#090811;--panel:#151222;--purple:#852cff;
+ --neon:#b66aff;--text:#f5efff;--muted:#9c93ae;
+ --green:#70f4ad;--red:#ff647c;--border:#302443
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
- margin:0;
- background:
- radial-gradient(ellipse at 80% 0%,#32105230,transparent 38%),
- radial-gradient(ellipse at 0% 80%,#102c5520,transparent 35%),
- var(--bg);
- color:var(--text);
- font-family:Arial,sans-serif;
-}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
 button,input,select,textarea{font:inherit}
-button{
- border:1px solid #a855f755;
- border-radius:10px;
- padding:11px 16px;
- color:white;
- background:linear-gradient(135deg,#922cff,#6520c9);
- cursor:pointer;
- transition:all .2s ease;
- box-shadow:0 4px 15px #852cff20;
-}
-button:hover{
- filter:brightness(1.2);
- transform:translateY(-1px);
- box-shadow:0 5px 20px #922cff45;
-}
-button:active{transform:scale(.98)}
-button:disabled{opacity:.5;cursor:not-allowed;transform:none}
-button.secondary{
- background:linear-gradient(135deg,#282039,#191426);
- border-color:#49365e;
-}
-button.danger{
- background:linear-gradient(135deg,#b52c50,#741b38);
- border-color:#ff587855;
-}
+button{border:0;border-radius:9px;padding:11px 15px;color:white;background:var(--purple);cursor:pointer}
+button:hover{filter:brightness(1.15)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:#302443}
+button.danger{background:#9d2945}
 input,select,textarea{
- background:#0b0914;
- border:1px solid #38294b;
- border-radius:10px;
- color:white;
- padding:12px;
- width:100%;
- outline:none;
- transition:border .2s,box-shadow .2s;
+ background:#0e0b18;border:1px solid var(--border);
+ border-radius:8px;color:white;padding:11px;width:100%;outline:none
 }
-input:focus,select:focus,textarea:focus{
- border-color:var(--neon);
- box-shadow:0 0 0 3px #b66aff18;
-}
+input:focus,select:focus,textarea:focus{border-color:var(--neon)}
 label{color:var(--muted);font-size:13px}
 .hidden{display:none!important}
-#loginScreen{
- min-height:100vh;
- display:flex;
- align-items:center;
- justify-content:center;
- padding:20px;
-}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-box{
- width:100%;
- max-width:410px;
- background:linear-gradient(145deg,#171127,#0d0a17);
- border:1px solid #633c86;
- border-radius:20px;
- padding:32px;
- box-shadow:0 0 55px #852cff25,0 20px 60px #0008;
+ width:100%;max-width:390px;background:var(--panel);
+ border:1px solid var(--border);border-radius:18px;padding:30px;
+ box-shadow:0 0 35px #852cff22
 }
-.logo{
- font-size:30px;
- font-weight:900;
- letter-spacing:4px;
- color:var(--neon);
- text-align:center;
- margin-bottom:8px;
- text-shadow:0 0 22px #a855f788;
-}
+.logo{font-size:29px;font-weight:900;letter-spacing:3px;color:var(--neon);text-align:center;margin-bottom:8px}
 .subtitle{text-align:center;color:var(--muted);margin-bottom:25px}
 .field{margin:14px 0}
 .field label{display:block;margin-bottom:7px}
 .full{width:100%}
 #app{display:none;min-height:100vh}
 .sidebar{
- width:250px;
- background:linear-gradient(180deg,#100b1d,#090711);
- border-right:1px solid #38234e;
- position:fixed;
- left:0;top:0;bottom:0;
- padding:22px 14px;
- z-index:5;
- box-shadow:8px 0 35px #0003;
+ width:235px;background:#100d1b;border-right:1px solid var(--border);
+ position:fixed;left:0;top:0;bottom:0;padding:22px 14px;z-index:5
 }
-.brand{
- font-size:23px;
- font-weight:900;
- color:var(--neon);
- letter-spacing:3px;
- padding:5px 10px 28px;
- text-shadow:0 0 18px #a855f766;
-}
-.nav button{
- width:100%;
- display:block;
- text-align:left;
- margin:5px 0;
- background:transparent;
- border:1px solid transparent;
- color:var(--muted);
- box-shadow:none;
-}
-.nav button.active,.nav button:hover{
- background:linear-gradient(90deg,#8b2be52c,#258bff12);
- border-color:#a855f744;
- color:white;
- box-shadow:inset 3px 0 var(--neon),0 0 18px #922cff15;
- transform:none;
-}
+.brand{font-size:22px;font-weight:900;color:var(--neon);letter-spacing:2px;padding:5px 10px 25px}
+.nav button{width:100%;display:block;text-align:left;margin:5px 0;background:transparent;color:var(--muted)}
+.nav button.active,.nav button:hover{background:#29183f;color:white}
 .sidebar-bottom{position:absolute;bottom:18px;left:14px;right:14px}
-.main{
- margin-left:250px;
- padding:30px;
- max-width:1650px;
-}
-.topbar{
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:15px;
- margin-bottom:28px;
- flex-wrap:wrap;
- padding-bottom:18px;
- border-bottom:1px solid #302044;
-}
-h1{font-size:27px;margin:0;letter-spacing:.3px}
-h2{font-size:20px;margin-top:0}
-.panel{
- background:linear-gradient(145deg,#171127dd,#100d1c);
- border:1px solid var(--border);
- border-radius:15px;
- padding:20px;
- margin-bottom:20px;
- box-shadow:var(--glow);
-}
-.grid{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:16px;
- margin-bottom:20px;
-}
-.stat{
- position:relative;
- overflow:hidden;
- background:linear-gradient(145deg,#1c1430,#100d1c);
- border:1px solid #49305f;
- border-radius:15px;
- padding:20px;
- box-shadow:0 8px 25px #0003;
- transition:transform .2s,border-color .2s;
-}
-.stat:hover{
- transform:translateY(-3px);
- border-color:#a855f7;
-}
-.stat:after{
- content:"";
- position:absolute;
- width:100px;height:100px;
- right:-35px;top:-45px;
- background:#922cff20;
- filter:blur(30px);
- border-radius:50%;
-}
-.stat strong{
- font-size:29px;
- display:block;
- margin-top:10px;
- color:#fff;
- text-shadow:0 0 15px #a855f744;
-}
+.main{margin-left:235px;padding:25px;max-width:1600px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px;flex-wrap:wrap}
+h1{font-size:25px;margin:0}
+h2{font-size:19px;margin-top:0}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat strong{font-size:27px;display:block;margin-top:9px}
 .stat span{font-size:13px;color:var(--muted)}
-.toolbar{
- display:flex;
- gap:10px;
- flex-wrap:wrap;
- margin-bottom:16px;
-}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
 .toolbar>*{flex:1;min-width:140px}
-.table-wrap{
- overflow-x:auto;
- border:1px solid #302044;
- border-radius:12px;
-}
-table{
- border-collapse:collapse;
- width:100%;
- min-width:1000px;
- background:#100d1b;
-}
-th,td{
- padding:14px 12px;
- text-align:left;
- border-bottom:1px solid #2b203b;
- font-size:13px;
- vertical-align:middle;
-}
-th{
- color:var(--neon);
- font-weight:700;
- background:#1b1329;
- text-transform:uppercase;
- letter-spacing:.5px;
- font-size:11px;
-}
-tr:hover td{background:#a855f70b}
-.empty{text-align:center;color:var(--muted);padding:28px}
-.status{
- display:inline-block;
- padding:6px 10px;
- border-radius:20px;
- background:#39204f;
- border:1px solid #a855f755;
- color:#e5caff;
- font-size:11px;
-}
-.contact-check{
- display:flex;
- align-items:center;
- gap:8px;
- cursor:pointer;
- white-space:nowrap;
-}
-.contact-check input{
- width:18px;height:18px;padding:0;margin:0;
- accent-color:var(--purple);cursor:pointer;
-}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1000px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+th{color:var(--neon);font-weight:700}
+tr:hover td{background:#ffffff05}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.status{display:inline-block;padding:5px 9px;border-radius:20px;background:#302443;color:#d7b8ff;font-size:11px}
+.contact-check{display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap}
+.contact-check input{width:18px;height:18px;padding:0;margin:0;accent-color:var(--purple);cursor:pointer}
 .contacted{color:var(--green)}
 .not-contacted{color:#ffbd73}
 .message{font-size:13px;color:var(--green);margin-top:10px}
 .error{color:var(--red)}
-.form-grid{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:14px;
-}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 .form-grid .field{margin:0}
 .section{display:none}
-.section.active{display:block;animation:fadeIn .25s ease}
-.progress{
- height:9px;
- background:#302044;
- border-radius:10px;
- overflow:hidden;
-}
-.progress div{
- height:100%;
- background:linear-gradient(90deg,var(--purple),var(--blue));
- box-shadow:0 0 12px #922cff88;
-}
-.ai-answer{
- white-space:pre-wrap;
- background:#0b0914;
- border:1px solid #38294b;
- padding:17px;
- border-radius:12px;
- min-height:90px;
- color:#e8dafa;
- line-height:1.6;
-}
+.section.active{display:block}
+.progress{height:8px;background:#302443;border-radius:10px;overflow:hidden}
+.progress div{height:100%;background:var(--neon)}
+.ai-answer{white-space:pre-wrap;background:#0e0b18;padding:15px;border-radius:9px;min-height:90px;color:#e8dafa}
 .muted{color:var(--muted)}
 .manager-name-input{min-width:180px;max-width:260px}
 .small-note{font-size:12px;color:var(--muted);margin-top:7px}
-.match-card{
- background:linear-gradient(145deg,#191229,#0d0a17);
- border:1px solid #49305f;
- border-radius:13px;
- padding:17px;
- margin:13px 0;
- box-shadow:0 5px 20px #0003;
-}
-.match-card-header{
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:12px;
- flex-wrap:wrap;
-}
-.match-details{font-size:13px;color:var(--muted);line-height:1.8}
-.match-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.match-card{background:#0e0b18;border:1px solid var(--border);border-radius:11px;padding:15px;margin:12px 0}
+.match-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.match-details{font-size:13px;color:var(--muted);line-height:1.7}
+.match-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .match-assigned{color:var(--green);font-size:12px}
 .match-pending{color:#ffbd73;font-size:12px}
-@keyframes fadeIn{
- from{opacity:0;transform:translateY(5px)}
- to{opacity:1;transform:translateY(0)}
-}
 @media(max-width:800px){
- .sidebar{
-  width:100%;
-  height:auto;
-  bottom:auto;
-  position:relative;
-  padding:12px;
-  border-right:0;
-  border-bottom:1px solid var(--border);
- }
- .brand{padding:5px 8px 14px}
- .nav{display:flex;overflow-x:auto;gap:5px;padding-bottom:5px}
- .nav button{width:auto;white-space:nowrap;margin:0;padding:9px 12px}
+ .sidebar{width:100%;height:auto;bottom:auto;position:relative;padding:12px}
+ .brand{padding:5px 8px 12px}
+ .nav{display:flex;overflow-x:auto;gap:5px}
+ .nav button{width:auto;white-space:nowrap;margin:0;padding:9px}
  .sidebar-bottom{position:static;margin-top:10px}
- .main{margin-left:0;padding:16px}
+ .main{margin-left:0;padding:15px}
  .topbar{align-items:flex-start}
- h1{font-size:23px}
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
- .stat{padding:14px}
- .stat strong{font-size:23px}
- .panel{padding:15px}
-}
-@media(max-width:420px){
- .grid{grid-template-columns:1fr 1fr}
- .stat strong{font-size:20px}
- .main{padding:12px}
 }
 
-/* VORTYX PREMIUM SIDEBAR */
-
-.sidebar{
- width:250px;
- background:linear-gradient(180deg,#100b1d,#080611);
- border-right:1px solid #38234e;
- box-shadow:8px 0 35px #0005;
+/* =========================================
+   VORTYX AGENCY — NEON PURPLE DESIGN UPDATE
+   Visual-only layer: existing app logic preserved
+   ========================================= */
+:root {
+  --neon: #a855f7;
+  --neon-blue: #6366f1;
+  --neon-light: #d8b4fe;
+  --bg-main: #080611;
+  --bg-panel: rgba(19, 14, 34, .94);
+  --border-neon: rgba(168, 85, 247, .28);
+  --text-main: #f5f0ff;
+  --text-muted: #a99bbd;
 }
-
-.brand{
- display:flex;
- align-items:center;
- gap:12px;
- padding:8px 10px 27px;
+body {
+  background: radial-gradient(ellipse at 15% 0%, rgba(112,40,190,.17), transparent 38%),
+              radial-gradient(ellipse at 90% 90%, rgba(79,70,229,.10), transparent 35%),
+              #080611 !important;
+  color: var(--text-main);
 }
-
-.brand-mark{
- width:43px;
- height:43px;
- display:flex;
- align-items:center;
- justify-content:center;
- border-radius:13px;
- background:linear-gradient(135deg,#a855f7,#5420ad);
- color:white;
- font-size:25px;
- font-weight:900;
- box-shadow:0 0 22px #922cff66;
+.sidebar {
+  background: linear-gradient(180deg,#100a1d 0%,#090611 100%) !important;
+  border-right: 1px solid var(--border-neon) !important;
+  box-shadow: 8px 0 35px rgba(0,0,0,.3);
 }
-
-.brand-text{
- display:flex;
- flex-direction:column;
- gap:4px;
+.brand, .logo {
+  color:#fff !important; font-weight:900 !important; letter-spacing:5px !important;
+  text-shadow:0 0 8px #a855f7,0 0 22px rgba(168,85,247,.8);
 }
-
-.brand-text span{
- color:#d8a8ff;
- font-size:22px;
- font-weight:900;
- letter-spacing:3px;
+.sidebar a, .sidebar button, .nav-item {
+  transition:all .25s ease; border-radius:10px;
 }
-
-.brand-text small{
- color:#81718f;
- font-size:9px;
- letter-spacing:2px;
+.sidebar a:hover, .sidebar button:hover, .nav-item:hover {
+  background:rgba(168,85,247,.13) !important; color:#d8b4fe !important;
+  box-shadow:inset 3px 0 #a855f7;
 }
-
-.nav-label{
- color:#746582;
- font-size:10px;
- font-weight:800;
- letter-spacing:1.7px;
- padding:15px 11px 7px;
+.panel, .card, .stat-card {
+  background:linear-gradient(145deg,rgba(27,18,44,.96),rgba(13,10,24,.98)) !important;
+  border:1px solid var(--border-neon) !important; border-radius:16px !important;
+  box-shadow:0 8px 28px rgba(0,0,0,.25);
+  transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease;
 }
-
-.nav button{
- display:flex;
- align-items:center;
- gap:12px;
- min-height:43px;
- padding:10px 12px;
- border-radius:10px;
- font-size:13px;
- font-weight:600;
- transition:all .2s ease;
+.panel:hover, .card:hover, .stat-card:hover {
+  border-color:rgba(168,85,247,.65) !important;
+  box-shadow:0 8px 30px rgba(124,58,237,.13);
 }
-
-.nav-icon{
- width:23px;
- height:23px;
- display:flex;
- align-items:center;
- justify-content:center;
- font-size:18px;
- color:#b68bd9;
+h1,h2,h3 { color:#f4eaff; }
+h2 { letter-spacing:.4px; }
+button,.btn { transition:all .2s ease; }
+button.primary,button[type="submit"],.btn-primary {
+  background:linear-gradient(110deg,#7c3aed,#a855f7,#6366f1) !important;
+  color:white !important; border:1px solid rgba(216,180,254,.35) !important;
+  box-shadow:0 4px 18px rgba(139,92,246,.25);
 }
-
-.nav button.active{
- background:linear-gradient(90deg,#8b2be538,#258bff12);
- border:1px solid #a855f755;
- box-shadow:inset 3px 0 #c084fc,0 0 18px #922cff18;
- color:white;
+button.primary:hover,button[type="submit"]:hover,.btn-primary:hover {
+  filter:brightness(1.18); box-shadow:0 0 24px rgba(168,85,247,.4); transform:translateY(-1px);
 }
-
-.nav button.active .nav-icon{
- color:#d8a8ff;
+input,select,textarea {
+  background:#100c1c !important; color:#f5f0ff !important;
+  border:1px solid rgba(168,85,247,.25) !important; border-radius:9px !important;
 }
-
-.nav button:hover{
- background:#a855f719;
- color:white;
- transform:translateX(3px);
+input:focus,select:focus,textarea:focus {
+  outline:none !important; border-color:#a855f7 !important;
+  box-shadow:0 0 0 3px rgba(168,85,247,.12) !important;
 }
-
-.ai-tag{
- margin-left:auto;
- font-size:9px;
- color:#d8a8ff;
- background:#922cff30;
- border:1px solid #a855f755;
- padding:3px 6px;
- border-radius:5px;
+table { border-collapse:separate; border-spacing:0; width:100%; }
+th { color:#d8b4fe !important; background:rgba(168,85,247,.09) !important; letter-spacing:.5px; }
+td,th { border-bottom:1px solid rgba(168,85,247,.12); padding:12px 10px; }
+tbody tr { transition:background .2s ease; }
+tbody tr:hover { background:rgba(168,85,247,.07) !important; }
+.live,.badge-live,.status-live {
+  color:#fff !important; background:rgba(220,38,110,.18) !important;
+  border:1px solid rgba(244,63,125,.5) !important;
+  box-shadow:0 0 12px rgba(244,63,125,.15);
 }
-
-.sidebar-bottom{
- border-top:1px solid #302044;
- padding-top:15px;
+* { scrollbar-width:thin; scrollbar-color:#7136a8 #100b1b; }
+*::-webkit-scrollbar { width:7px; height:7px; }
+*::-webkit-scrollbar-track { background:#100b1b; }
+*::-webkit-scrollbar-thumb { background:linear-gradient(#a855f7,#6366f1); border-radius:10px; }
+.login-container,.login-box {
+  background:rgba(17,11,29,.94) !important; border:1px solid rgba(168,85,247,.35) !important;
+  border-radius:20px !important; box-shadow:0 0 55px rgba(124,58,237,.15);
 }
-
-.user-card{
- display:flex;
- align-items:center;
- gap:10px;
- padding:10px;
- background:#171127;
- border:1px solid #38234e;
- border-radius:11px;
-}
-
-.user-avatar{
- width:35px;
- height:35px;
- display:flex;
- align-items:center;
- justify-content:center;
- border-radius:10px;
- background:linear-gradient(135deg,#922cff,#258bff);
- font-weight:900;
- color:white;
-}
-
-.user-details{
- display:flex;
- flex-direction:column;
- gap:4px;
- min-width:0;
-}
-
-.user-details strong{
- font-size:12px;
- color:white;
-}
-
-.user-details small{
- font-size:10px;
- color:#a69ab9;
- overflow-wrap:anywhere;
-}
-
-.logout-btn{
- margin-top:12px;
- display:flex;
- align-items:center;
- justify-content:center;
- gap:8px;
- background:linear-gradient(135deg,#9d2945,#64172e)!important;
-}
-
-@media(max-width:800px){
- .brand{padding:5px 8px 14px}
- .nav-label{padding:10px 8px 6px}
- .nav button{min-height:38px}
- .sidebar-bottom{border-top:1px solid #302044;padding-top:12px}
+@media(max-width:768px) {
+  .panel,.card,.stat-card { border-radius:12px !important; }
+  .sidebar { box-shadow:5px 0 25px rgba(0,0,0,.4); }
+  table { font-size:12px; }
 }
 
 </style>
-
 </head>
 
 <body>
@@ -540,90 +213,25 @@ tr:hover td{background:#a855f70b}
 </div>
 
 <div id="app">
- 
-<aside class="sidebar">
-  <div class="brand">
-    <div class="brand-mark"></div>
-    <div class="brand-text">
-      <span>VORTYX</span>
-      <small>AGENCY MANAGER</small>
-    </div>
-  </div>
-
-  <div class="nav-label">WORKSPACE</div>
-
+ <aside class="sidebar">
+  <div class="brand">VORTYX</div>
   <nav class="nav">
-   <button class="active" onclick="showSection('dashboard',this)">
-    <span class="nav-icon">⌂</span>
-    <span>Dashboard</span>
-   </button>
-
-   <button onclick="showSection('creators',this)">
-    <span class="nav-icon">♙</span>
-    <span>Creators</span>
-   </button>
-
-   <button onclick="showSection('agencyCreators',this)">
-    <span class="nav-icon">✦</span>
-    <span>Creatori agenție</span>
-   </button>
-
-   <button onclick="showSection('matches',this)">
-    <span class="nav-icon">⚔</span>
-    <span>Meciuri</span>
-   </button>
-
-   <div class="nav-label">MANAGEMENT</div>
-
-   <button onclick="showSection('managers',this)">
-    <span class="nav-icon">♧</span>
-    <span>Managers</span>
-   </button>
-
-   <button onclick="showSection('tasks',this)">
-    <span class="nav-icon">▤</span>
-    <span>Sarcini manageri</span>
-   </button>
-
-   <button onclick="showSection('activityLog',this)">
-    <span class="nav-icon">◷</span>
-    <span>Activitate echipă</span>
-   </button>
-
-   <div class="nav-label">ANALYTICS & TOOLS</div>
-
-   <button onclick="showSection('statistics',this)">
-    <span class="nav-icon">▥</span>
-    <span>Statistics</span>
-   </button>
-
-   <button onclick="showSection('ai',this)">
-    <span class="nav-icon">✧</span>
-    <span>VORTYX AI</span>
-    <span class="ai-tag">AI</span>
-   </button>
-
-   <button onclick="showSection('settings',this)">
-    <span class="nav-icon">⚙</span>
-    <span>Settings</span>
-   </button>
+   <button class="active" onclick="showSection('dashboard',this)">Dashboard</button>
+   <button onclick="showSection('creators',this)">Creators</button>
+   <button onclick="showSection('agencyCreators',this)">Creatori agenție</button>
+   <button onclick="showSection('matches',this)">Meciuri</button>
+   <button onclick="showSection('managers',this)">Managers</button>
+   <button onclick="showSection('tasks',this)">Sarcini manageri</button>
+   <button onclick="showSection('activityLog',this)">Activitate echipă</button>
+   <button onclick="showSection('statistics',this)">Statistics</button>
+   <button onclick="showSection('ai',this)">VORTYX AI</button>
+   <button onclick="showSection('settings',this)">Settings</button>
   </nav>
-
   <div class="sidebar-bottom">
-   <div class="user-card">
-    <div class="user-avatar">V</div>
-    <div class="user-details">
-     <strong>Administrator</strong>
-     <small id="userInfo"></small>
-    </div>
-   </div>
-
-   <button class="danger full logout-btn" onclick="logout()">
-    <span>↪</span> Deconectare
-   </button>
+   <small id="userInfo"></small>
+   <button class="danger full" onclick="logout()" style="margin-top:10px">Deconectare</button>
   </div>
-</aside>
-
+ </aside>
 
  <main class="main">
   <div class="topbar">
@@ -631,102 +239,23 @@ tr:hover td{background:#a855f70b}
    <span class="status" id="roleLabel">Conectat</span>
   </div>
 
-  
-<section id="dashboard" class="section active">
-
-  <div class="dashboard-heading">
-    <div>
-      <div class="dashboard-eyebrow">VORTYX INTERNATIONAL</div>
-      <h2>Agency Overview</h2>
-      <p class="muted">Panoul de control al agenției tale</p>
-    </div>
-    <div class="dashboard-status">
-      <span class="status-dot"></span>
-      SYSTEM ONLINE
-    </div>
-  </div>
-
-  <div class="grid dashboard-grid">
-
-    <div class="stat dashboard-stat">
-      <div class="stat-top">
-        <span>Total creatori</span>
-        <span class="stat-icon">♙</span>
-      </div>
-      <strong id="totalCreators">0</strong>
-      <small>Baza totală de creatori</small>
-    </div>
-
-    <div class="stat dashboard-stat">
-      <div class="stat-top">
-        <span>Contactați</span>
-        <span class="stat-icon">✓</span>
-      </div>
-      <strong id="contactedCount">0</strong>
-      <small>Creatori contactați</small>
-    </div>
-
-    <div class="stat dashboard-stat">
-      <div class="stat-top">
-        <span>De contactat</span>
-        <span class="stat-icon">◷</span>
-      </div>
-      <strong id="pendingCount">0</strong>
-      <small>Contactare în așteptare</small>
-    </div>
-
-    <div class="stat dashboard-stat">
-      <div class="stat-top">
-        <span>Manageri</span>
-        <span class="stat-icon">♧</span>
-      </div>
-      <strong id="managerCount">0</strong>
-      <small>Echipa de management</small>
-    </div>
-
-  </div>
-
-  <div class="dashboard-columns">
-
-    <div class="panel dashboard-progress">
-      <div class="panel-heading">
-        <div>
-          <span class="dashboard-eyebrow">PERFORMANȚĂ</span>
-          <h2>Progres contactare</h2>
-        </div>
-        <span class="progress-icon">↗</span>
-      </div>
-
-      <div class="progress dashboard-progress-bar">
-        <div id="contactProgress" style="width:0%"></div>
-      </div>
-
-      <p id="progressText" class="muted">0% dintre creatori contactați</p>
-    </div>
-
-    <div class="panel dashboard-activity">
-      <div class="panel-heading">
-        <div>
-          <span class="dashboard-eyebrow">LIVE UPDATES</span>
-          <h2>Activitate</h2>
-        </div>
-        <span class="activity-icon">◉</span>
-      </div>
-
-      <p id="activity" class="muted">
-        Bine ai venit în VORTYX AGENCY Manager.
-      </p>
-    </div>
-
-  </div>
-
-  <div class="dashboard-footer">
-    <span>VORTYX AGENCY MANAGER</span>
-    <span>ROMANIA · GERMANY</span>
-  </div>
-
-</section>
-
+  <section id="dashboard" class="section active">
+   <div class="grid">
+    <div class="stat"><span>Total creatori</span><strong id="totalCreators">0</strong></div>
+    <div class="stat"><span>Contactați</span><strong id="contactedCount">0</strong></div>
+    <div class="stat"><span>De contactat</span><strong id="pendingCount">0</strong></div>
+    <div class="stat"><span>Manageri</span><strong id="managerCount">0</strong></div>
+   </div>
+   <div class="panel">
+    <h2>Progres contactare</h2>
+    <div class="progress"><div id="contactProgress" style="width:0%"></div></div>
+    <p id="progressText" class="muted">0% dintre creatori contactați</p>
+   </div>
+   <div class="panel">
+    <h2>Activitate</h2>
+    <p id="activity" class="muted">Bine ai venit în VORTYX AGENCY Manager.</p>
+   </div>
+  </section>
 
   <section id="creators" class="section">
    <div class="panel">
@@ -761,7 +290,7 @@ tr:hover td{background:#a855f70b}
        </tr>
       </thead>
       <tbody id="creatorTable">
-       <tr><td colspan="8" class="empty">Se încarcă...</td></tr>
+       <tr><td colspan="9" class="empty">Se încarcă...</td></tr>
       </tbody>
      </table>
     </div>
