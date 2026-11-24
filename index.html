@@ -305,7 +305,213 @@ tbody tr:hover td{background:rgba(153,81,232,.07)!important}
 .official-logo-sidebar{justify-content:flex-start;width:100%;padding:0 4px 20px!important}
 .vortyx-logo-compact{display:block;width:100%;max-width:215px;height:105px;object-fit:contain;object-position:left center;filter:drop-shadow(0 0 13px rgba(112,48,255,.42))}
 @media(max-width:768px){.official-logo-sidebar{width:auto;max-width:170px;padding:0 4px 8px!important}.vortyx-logo-compact{width:150px;height:65px}.vortyx-logo-full{width:min(100%,235px);max-height:235px}}
+/* ==================================================
+   VORTYX — CYBER COMMAND INTERFACE
+   ================================================== */
 
+:root {
+  --bg: #070910;
+  --panel: rgba(17, 21, 36, .88);
+  --purple: #9b5cff;
+  --neon: #b77aff;
+  --blue: #38cfff;
+  --border: rgba(139, 92, 246, .25);
+  --text: #f4f5ff;
+  --muted: #8993ad;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 75% 0%, rgba(80, 45, 170, .19), transparent 38%),
+    radial-gradient(ellipse at 10% 90%, rgba(0, 160, 255, .09), transparent 35%),
+    #070910 !important;
+  color: var(--text);
+}
+
+.sidebar {
+  background: linear-gradient(180deg, #101426, #080b14) !important;
+  border-right: 1px solid var(--border) !important;
+  box-shadow: 8px 0 40px rgba(0,0,0,.4);
+}
+
+.brand {
+  color: #fff !important;
+  letter-spacing: 4px;
+  text-shadow: 0 0 18px var(--purple);
+}
+
+.nav button {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  margin: 6px 0;
+  padding: 13px 14px;
+  transition: .25s ease;
+}
+
+.nav button:hover,
+.nav button.active {
+  color: #fff !important;
+  background: linear-gradient(100deg,
+    rgba(145, 75, 255, .25),
+    rgba(40, 190, 255, .10)) !important;
+  border-color: rgba(159, 105, 255, .35);
+  box-shadow: inset 3px 0 var(--purple),
+              0 0 18px rgba(145, 75, 255, .12);
+}
+
+.main {
+  padding: 30px;
+}
+
+.topbar {
+  padding: 18px 22px;
+  margin-bottom: 25px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: rgba(15, 19, 33, .75);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 35px rgba(0,0,0,.2);
+}
+
+.topbar h1 {
+  font-size: 27px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.topbar h1::before {
+  content: "VORTYX / ";
+  color: var(--blue);
+  font-size: 12px;
+  letter-spacing: 2px;
+  vertical-align: middle;
+}
+
+.panel,
+.stat,
+.match-card {
+  background: linear-gradient(145deg,
+    rgba(24, 29, 49, .94),
+    rgba(12, 16, 29, .96)) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 35px rgba(0,0,0,.25);
+  backdrop-filter: blur(14px);
+  transition: .25s ease;
+}
+
+.panel:hover,
+.stat:hover,
+.match-card:hover {
+  border-color: rgba(56, 207, 255, .42) !important;
+  box-shadow: 0 0 25px rgba(90, 80, 255, .12);
+  transform: translateY(-2px);
+}
+
+.stat {
+  padding: 23px !important;
+  min-height: 125px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::after {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  right: -35px;
+  top: -35px;
+  border-radius: 50%;
+  background: rgba(155, 92, 255, .12);
+  filter: blur(12px);
+}
+
+.stat strong {
+  display: block;
+  margin-top: 14px;
+  font-size: 34px !important;
+  color: #fff;
+  text-shadow: 0 0 18px rgba(155, 92, 255, .45);
+}
+
+button {
+  background: linear-gradient(110deg, #8045ed, #4c79ed);
+  border: 1px solid rgba(190, 155, 255, .25);
+  border-radius: 11px;
+  box-shadow: 0 5px 18px rgba(100, 65, 220, .18);
+  transition: .2s ease;
+}
+
+button:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+input,
+select,
+textarea {
+  background: rgba(7, 11, 22, .9) !important;
+  border: 1px solid rgba(120, 135, 180, .25) !important;
+  border-radius: 11px !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px rgba(56, 207, 255, .10);
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0 5px;
+}
+
+thead th {
+  color: var(--blue);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+tbody tr {
+  background: rgba(22, 27, 44, .7);
+}
+
+tbody td {
+  border-top: 1px solid rgba(130, 110, 190, .12);
+  border-bottom: 1px solid rgba(130, 110, 190, .12);
+  padding: 13px 10px;
+}
+
+.progress {
+  height: 11px;
+  background: #171d30;
+  border-radius: 20px;
+}
+
+.progress div {
+  background: linear-gradient(90deg, #984cff, #35cfff);
+  box-shadow: 0 0 16px rgba(120, 90, 255, .55);
+  border-radius: 20px;
+}
+
+.status {
+  border: 1px solid rgba(56, 207, 255, .3);
+  background: rgba(56, 207, 255, .08);
+  color: #65dfff;
+  padding: 8px 14px;
+  border-radius: 20px;
+}
+
+@media(max-width:800px) {
+  .main { padding: 14px !important; }
+  .topbar { padding: 14px; }
+  .topbar h1 { font-size: 20px !important; }
+  .stat { min-height: 100px; padding: 15px !important; }
+  .stat strong { font-size: 26px !important; }
+}
 </style>
 </head>
 
@@ -455,7 +661,6 @@ tbody tr:hover td{background:rgba(153,81,232,.07)!important}
        <option value="RO">România (RO)</option><option value="DE">Germania (DE)</option>
       </select>
      </div>
-     <div class="field"><label>Perioada raportului (lună)</label><input type="month" id="importPeriod"></div>
      <div class="field"><label>Fișier Excel / CSV</label><input type="file" id="importFile" accept=".xlsx,.xls,.csv"></div>
     </div>
     <button onclick="importCreators()" style="margin-top:12px">Importă fișierul</button>
@@ -902,24 +1107,11 @@ async function loadCreators() {
 }
 
 /* CREATORI */
-function looksLikeUuid(value) {
- return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
-}
-
-function creatorDisplayName(row) {
- const candidates = [row.display_name, row.nickname, row.full_name, row.name, row.tiktok_username];
- for (const value of candidates) {
-  const text = String(value ?? "").trim();
-  if (text && !looksLikeUuid(text)) return text;
- }
- return row.tiktok_username ? "@" + normalizeUsername(row.tiktok_username) : "Nume indisponibil";
-}
-
 function creatorData(row) {
  return {
   id:row.id,
-  name:creatorDisplayName(row),
-  tiktok:looksLikeUuid(row.tiktok_username) ? "" : normalizeUsername(row.tiktok_username || ""),
+  name:row.full_name || row.tiktok_username || "Fără nume",
+  tiktok:normalizeUsername(row.tiktok_username || ""),
   country:normalizeCountry(row.country || row.country_id),
   manager:row.manager_id || "",
   status:row.status || "Available",
@@ -1179,196 +1371,111 @@ async function addCreator() {
  await loadCreators();
 }
 
-/* IMPORT EXCEL / CSV — import repetabil, fără dubluri și cu istoric în import_metadata */
-function headerKey(value) {
- return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
-}
-
-function findHeaderIndex(headers, aliases) {
- const normalized = headers.map(headerKey);
- for (const alias of aliases) {
-  const index = normalized.indexOf(headerKey(alias));
-  if (index >= 0) return index;
- }
- return -1;
-}
-
-function parseBackstageSheet(rows) {
- if (!rows.length) return { records:[], headers:[], hasHeader:false };
- const possibleHeaders = rows.slice(0, Math.min(rows.length, 8));
- const headerAliases = ["username","tiktokusername","creatorusername","uniqueid","uniqueidusername","nickname","creatorsnickname","displayname","creatorname","userid","creatorid","diamonds","totaldiamonds","liveduration","livetime","livestreamingduration","activedays"];
- let headerRowIndex = -1;
- let bestScore = 0;
- possibleHeaders.forEach((row, index) => {
-  const score = row.reduce((sum, cell) => sum + (headerAliases.includes(headerKey(cell)) ? 1 : 0), 0);
-  if (score > bestScore) { bestScore = score; headerRowIndex = index; }
- });
- const hasHeader = bestScore >= 2;
- const headers = hasHeader ? rows[headerRowIndex].map(v => String(v ?? "").trim()) : [];
- const dataRows = hasHeader ? rows.slice(headerRowIndex + 1) : rows;
- const indexes = hasHeader ? {
-  username:findHeaderIndex(headers,["username","tiktokusername","creatorusername","uniqueid","uniqueidusername","handle","account"]),
-  displayName:findHeaderIndex(headers,["nickname","creatorsnickname","displayname","creatorname","name","fullname"]),
-  externalId:findHeaderIndex(headers,["userid","creatorid","tiktokid","creatoruniqueid","id"]),
-  diamonds:findHeaderIndex(headers,["diamonds","totaldiamonds","giftpoints","points"]),
-  liveDuration:findHeaderIndex(headers,["liveduration","livetime","livehours","liveminutes","totalduration","livestreamingduration"]),
-  liveDays:findHeaderIndex(headers,["activedays","livedays","dayswithlive","validlivedays"]),
-  status:findHeaderIndex(headers,["status","creatorstatus"])
- } : null;
- const records = [];
- for (const row of dataRows) {
-  if (!Array.isArray(row) || !row.some(v => String(v ?? "").trim())) continue;
-  let username = "", displayName = "", externalId = "";
-  let diamonds = null, liveDuration = null, liveDays = null, status = "Available";
-  if (hasHeader) {
-   if (indexes.username >= 0) username = normalizeUsername(row[indexes.username]);
-   if (indexes.displayName >= 0) displayName = String(row[indexes.displayName] ?? "").trim();
-   if (indexes.externalId >= 0) externalId = String(row[indexes.externalId] ?? "").trim();
-   if (indexes.diamonds >= 0) diamonds = row[indexes.diamonds];
-   if (indexes.liveDuration >= 0) liveDuration = row[indexes.liveDuration];
-   if (indexes.liveDays >= 0) liveDays = row[indexes.liveDays];
-   if (indexes.status >= 0 && row[indexes.status]) status = String(row[indexes.status]).trim();
-  } else {
-   // Fallback pentru exporturi fără antet: ignoră UUID-ul și caută username-ul în primele coloane.
-   const values = row.map(v => String(v ?? "").trim());
-   externalId = values.find(v => looksLikeUuid(v)) || "";
-   const candidates = values.filter(v => v && !looksLikeUuid(v));
-   username = normalizeUsername(candidates.find(v => /^@?[A-Za-z0-9._]{2,}$/.test(v)) || "");
-   displayName = candidates.find(v => v && v !== username && !/^@?[A-Za-z0-9._]{2,}$/.test(v)) || "";
-   if (!username && candidates.length) username = normalizeUsername(candidates[0]);
-  }
-  if (!username && displayName) username = normalizeUsername(displayName);
-  if (!username || looksLikeUuid(username)) continue;
-  records.push({ username, displayName:displayName && !looksLikeUuid(displayName) ? displayName : "", externalId, diamonds, liveDuration, liveDays, status });
- }
- return { records, headers, hasHeader };
-}
-
-function mergeBackstageMetadata(previous, record, period) {
- const metadata = previous && typeof previous === "object" && !Array.isArray(previous) ? { ...previous } : {};
- const currentSnapshot = {
-  period,
-  diamonds:record.diamonds ?? null,
-  live_duration:record.liveDuration ?? null,
-  live_days:record.liveDays ?? null,
-  imported_at:new Date().toISOString()
- };
- const history = Array.isArray(metadata.backstage_monthly_history) ? [...metadata.backstage_monthly_history] : [];
- const oldCurrent = metadata.backstage_current_month;
- if (oldCurrent && oldCurrent.period && oldCurrent.period !== period) {
-  const existingIndex = history.findIndex(item => item.period === oldCurrent.period);
-  if (existingIndex >= 0) history[existingIndex] = oldCurrent;
-  else history.push(oldCurrent);
- }
- if (period) {
-  const existingIndex = history.findIndex(item => item.period === period);
-  if (existingIndex >= 0) history[existingIndex] = currentSnapshot;
-  else history.push(currentSnapshot);
-  metadata.backstage_current_month = currentSnapshot;
-  metadata.backstage_monthly_history = history.sort((a,b) => String(a.period).localeCompare(String(b.period)));
- }
- metadata.backstage = {
-  ...(metadata.backstage && typeof metadata.backstage === "object" ? metadata.backstage : {}),
-  creator_id:record.externalId || metadata.backstage?.creator_id || null,
-  last_imported_at:new Date().toISOString()
- };
- return metadata;
-}
-
+/* IMPORT EXCEL / CSV */
 async function importCreators() {
  if (!isAdmin()) {
   msg("importMessage", "Nu ai permisiunea de a importa creatori.", true);
   return;
  }
- const fileInput = document.getElementById("importFile");
- const file = fileInput?.files?.[0];
+
+ const file = document.getElementById("importFile").files[0];
  const country = document.getElementById("importCountry").value;
- const periodInput = document.getElementById("importPeriod");
- const period = periodInput?.value || new Date().toISOString().slice(0,7);
- if (!country) { msg("importMessage", "Selectează țara creatorilor înainte de import.", true); return; }
- if (!file) { msg("importMessage", "Selectează un fișier Excel sau CSV.", true); return; }
- if (!window.XLSX) { msg("importMessage", "Biblioteca Excel nu s-a încărcat. Reîncarcă pagina și încearcă din nou.", true); return; }
- const importButton = document.querySelector('#importPanel button[onclick="importCreators()"]');
- if (importButton) { importButton.disabled = true; importButton.textContent = "Se importă..."; }
+
+ if (!country) {
+  msg("importMessage", "Selectează țara creatorilor înainte de import.", true);
+  return;
+ }
+ if (!file) {
+  msg("importMessage", "Selectează un fișier Excel sau CSV.", true);
+  return;
+ }
+
  try {
-  msg("importMessage", "Se citește fișierul și se verifică creatorii existenți...");
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type:"array", cellDates:true });
+  const workbook = XLSX.read(buffer, { type:"array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet) throw new Error("Fișierul nu conține o foaie de calcul.");
-  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"", raw:false });
-  const parsed = parseBackstageSheet(rows);
-  if (!parsed.records.length) throw new Error("Nu am identificat username-uri TikTok. Verifică antetul Excel: Username / Unique ID / TikTok Username.");
-  const byUsername = new Map(creators.map(item => [normalizeUsername(item.tiktok_username).toLowerCase(), item]).filter(([key]) => key));
-  const byExternalId = new Map();
-  creators.forEach(item => {
-   const externalId = item.import_metadata?.backstage?.creator_id || (looksLikeUuid(item.full_name) ? item.full_name : "");
-   if (externalId) byExternalId.set(String(externalId).toLowerCase(), item);
-  });
-  const seen = new Set();
-  const inserts = [];
-  const updates = [];
-  let duplicatesInFile = 0;
-  for (const record of parsed.records) {
-   const key = record.username.toLowerCase();
-   if (seen.has(key)) { duplicatesInFile++; continue; }
-   seen.add(key);
-   const existing = byUsername.get(key) || (record.externalId ? byExternalId.get(String(record.externalId).toLowerCase()) : null);
-   const fullName = record.displayName || record.username;
-   if (existing) {
-    const oldMetadata = existing.import_metadata;
-    const payload = {
-     full_name:fullName,
-     tiktok_username:record.username,
-     tiktok_url:"https://www.tiktok.com/@" + record.username,
-     country,
-     status:record.status || existing.status || "Available",
-     import_metadata:mergeBackstageMetadata(oldMetadata, record, period)
-    };
-    updates.push({ id:existing.id, payload });
-   } else {
-    inserts.push({
-     full_name:fullName,
-     tiktok_username:record.username,
-     tiktok_url:"https://www.tiktok.com/@" + record.username,
-     whatsapp:null,
-     country_id:null,
-     manager_id:null,
-     language:null,
-     status:record.status || "Available",
-     created_at:new Date().toISOString(),
-     country,
-     role:"creator",
-     contacted:false,
-     contacted_by:null,
-     contacted_at:null,
-     import_metadata:mergeBackstageMetadata({}, record, period)
-    });
+
+  if (!sheet) {
+   msg("importMessage", "Fișierul nu conține o foaie de calcul.", true);
+   return;
+  }
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"" });
+  const existing = new Set(creators.map(item =>
+   normalizeUsername(item.tiktok_username).toLowerCase()
+  ));
+
+  const newRows = [];
+  let duplicates = 0;
+
+  rows.forEach((row, index) => {
+   const username = normalizeUsername(row[0]);
+   if (!username) return;
+
+   if (index === 0 &&
+    ["username","tiktok","tiktok_username","creator"].includes(username.toLowerCase())) return;
+
+   if (existing.has(username.toLowerCase())) {
+    duplicates++;
+    return;
    }
+
+   existing.add(username.toLowerCase());
+
+   newRows.push({
+    full_name:username,
+    tiktok_username:username,
+    tiktok_url:"https://www.tiktok.com/@" + username,
+    whatsapp:null,
+    country_id:null,
+    manager_id:null,
+    language:null,
+    status:String(row[1] || "Available"),
+    created_at:new Date().toISOString(),
+    country:country,
+    role:"creator",
+    contacted:false,
+    contacted_by:null,
+    contacted_at:null,
+    import_metadata:{
+     category:row[2] || "Regular",
+     extra4:row[3] ?? null,
+     flag1:row[4] ?? null,
+     flag2:row[5] ?? null,
+     sourceDate:row[6] ?? null,
+     value:row[7] ?? null
+    }
+   });
+  });
+
+  if (!newRows.length) {
+   msg("importMessage", "Nu există creatori noi. Duplicate ignorate: " + duplicates);
+   return;
   }
-  let updated = 0;
-  for (let i=0; i<updates.length; i++) {
-   const item = updates[i];
-   const { error } = await db.from("creators").update(item.payload).eq("id", item.id);
-   if (error) throw new Error("Actualizarea creatorului " + item.payload.tiktok_username + " a eșuat: " + error.message);
-   updated++;
-  }
+
+  const batchSize = 100;
   let imported = 0;
-  for (let i=0; i<inserts.length; i+=100) {
-   const batch = inserts.slice(i,i+100);
+
+  for (let index = 0; index < newRows.length; index += batchSize) {
+   const batch = newRows.slice(index, index + batchSize);
    const { error } = await db.from("creators").insert(batch);
-   if (error) throw new Error("Importul s-a oprit după " + imported + " creatori noi: " + error.message);
+
+   if (error) {
+    msg("importMessage", "Import oprit după " + imported + " creatori. Eroare: " + error.message, true);
+    await loadCreators();
+    return;
+   }
    imported += batch.length;
   }
-  msg("importMessage", `Import finalizat pentru ${countryLabel(country)} (${period}): ${imported} noi, ${updated} actualizați, ${duplicatesInFile} duplicate în fișier. Managerii și statusul de contactare existenți au fost păstrați.`);
-  fileInput.value = "";
+
+  msg("importMessage",
+   `Import reușit: ${imported} creatori pentru ${countryLabel(country)}. Duplicate ignorate: ${duplicates}. Toți au rămas fără manager.`);
+
+  document.getElementById("importFile").value = "";
   await loadCreators();
+
  } catch (error) {
-  console.error("importCreators:", error);
-  msg("importMessage", "Eroare la import: " + (error?.message || error), true);
-  await loadCreators();
- } finally {
-  if (importButton) { importButton.disabled = false; importButton.textContent = "Importă fișierul"; }
+  msg("importMessage", "Eroare la citirea fișierului: " + error.message, true);
  }
 }
 
