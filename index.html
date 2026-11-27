@@ -2525,7 +2525,7 @@ function renderMatches(){
                 <td>${m.link?`<a href="${escapeHTML(m.link)}" target="_blank" rel="noopener noreferrer" style="color:var(--purple2)">Deschide</a>`:"—"}</td>
                 <td style="white-space:nowrap">
                   <button class="btn secondary" onclick="openMatchScoreModal('${m.id}')">${hasScore?"Editează punctaj":"Adaugă punctaj"}</button>
-                  <button class="btn danger" onclick="deleteMatch('${m.id}')">Șterge</button>
+                  <button type="button" class="btn danger" data-delete-match="${escapeHTML(String(m.id))}">Șterge</button>
                 </td>
               </tr>`;
             }).join("")}
@@ -2543,14 +2543,41 @@ function completeMatch(id){
 }
 
 function deleteMatch(id){
-  const match=state.matches.find(m=>m.id===id);
-  if(!match)return;
-  if(!confirm("Ștergi definitiv acest meci și punctajul lui?"))return;
-  state.matches=state.matches.filter(m=>m.id!==id);
-  saveState();
-  renderMatches();
-  notify("Meciul a fost șters.");
+  try{
+    if(!Array.isArray(state.matches)) state.matches=[];
+    const match=state.matches.find(m=>String(m.id)===String(id));
+    if(!match){
+      notify("Meciul nu a fost găsit. Reîncarcă lista și încearcă din nou.");
+      renderMatches();
+      return;
+    }
+    if(!window.confirm("Ștergi definitiv acest meci și punctajul lui?")) return;
+
+    const previousMatches=state.matches;
+    state.matches=previousMatches.filter(m=>String(m.id)!==String(id));
+    try{
+      saveState();
+    }catch(storageError){
+      state.matches=previousMatches;
+      throw storageError;
+    }
+    renderMatches();
+    notify("Meciul și punctajul lui au fost șterse.");
+  }catch(error){
+    console.error("Eroare la ștergerea meciului:",error);
+    notify("Nu am putut șterge meciul. Verifică stocarea browserului și încearcă din nou.");
+  }
 }
+
+// Delegare de eveniment: butonul funcționează și după ce tabelul este redesenat.
+document.addEventListener("click",function(event){
+  const button=event.target.closest("[data-delete-match]");
+  if(!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  deleteMatch(button.getAttribute("data-delete-match"));
+});
+window.deleteMatch=deleteMatch;
 
 
 /* ---------- COMPETITIONS ---------- */
