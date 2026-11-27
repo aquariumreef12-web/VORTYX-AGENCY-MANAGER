@@ -2349,7 +2349,7 @@ function openMatchModal(){
       <select id="matchCreator" class="field">
         <option value="">Selectează creator</option>
         ${state.creators.map(c=>`
-          <option value="${c.id}">${escapeHTML(c.name)} (${c.country})</option>
+          <option value="${c.id}">${escapeHTML(c.name)} (${escapeHTML(c.country||"")})</option>
         `).join("")}
       </select>
     </div>
@@ -2360,8 +2360,12 @@ function openMatchModal(){
     </div>
 
     <div class="form-row">
-      <label>Data și ora</label>
-      <input id="matchDate" class="field" type="datetime-local">
+      <label>Data meciului</label>
+      <input id="matchDate" class="field" type="date">
+    </div>
+    <div class="form-row">
+      <label>Ora meciului</label>
+      <input id="matchTime" class="field" type="time">
     </div>
 
     <div class="form-row">
@@ -2382,113 +2386,170 @@ function openMatchModal(){
 }
 
 function saveMatch(){
-  const creatorId=document.getElementById("matchCreator").value;
-  const opponent=document.getElementById("matchOpponent").value.trim();
+  const creatorId=document.getElementById("matchCreator")?.value;
+  const opponent=document.getElementById("matchOpponent")?.value.trim();
+  const date=document.getElementById("matchDate")?.value||"";
+  const time=document.getElementById("matchTime")?.value||"";
 
   if(!creatorId||!opponent){
     notify("Alege creatorul și completează adversarul.");
     return;
   }
+  if(!date||!time){
+    notify("Selectează data și ora meciului.");
+    return;
+  }
 
-  const creator=state.creators.find(c=>c.id===creatorId);
+  const creator=state.creators.find(c=>String(c.id)===String(creatorId));
+  if(!creator){notify("Creatorul selectat nu mai există în listă.");return;}
+
+  const localDateTime=date+"T"+time;
+  const parsedDate=new Date(localDateTime);
+  if(Number.isNaN(parsedDate.getTime())){
+    notify("Data sau ora selectată nu este validă.");
+    return;
+  }
 
   state.matches.push({
     id:crypto.randomUUID(),
     creatorId,
-    creatorName:creator?.name||"",
+    creatorName:creator.name||"",
     opponent,
-    date:document.getElementById("matchDate").value,
-    link:document.getElementById("matchLink").value.trim(),
-    notes:document.getElementById("matchNotes").value.trim(),
+    date:localDateTime,
+    link:document.getElementById("matchLink")?.value.trim()||"",
+    notes:document.getElementById("matchNotes")?.value.trim()||"",
+    scoreCreator:null,
+    scoreOpponent:null,
     status:"Planificat",
     createdAt:new Date().toISOString()
   });
 
   saveState();
-  addActivity("Match planificat pentru "+creator?.name);
+  addActivity("Match planificat pentru "+(creator.name||"creator"));
   closeModal();
   renderMatches();
   notify("Match salvat.");
 }
 
+function openMatchScoreModal(id){
+  const match=state.matches.find(m=>m.id===id);
+  if(!match)return;
+  const first=Number.isFinite(Number(match.scoreCreator))?match.scoreCreator:"";
+  const second=Number.isFinite(Number(match.scoreOpponent))?match.scoreOpponent:"";
+  openModal(`
+    <h2>Rezultatul Match-ului</h2>
+    <p class="page-sub" style="margin-bottom:16px">Introdu punctele obținute de fiecare creator în TikTok LIVE Match.</p>
+    <div class="form-row">
+      <label>${escapeHTML(match.creatorName||"Creator 1")} – puncte</label>
+      <input id="matchScoreCreator" class="field" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex.: 125430" value="${first}">
+    </div>
+    <div class="form-row">
+      <label>${escapeHTML(match.opponent||"Creator 2")} – puncte</label>
+      <input id="matchScoreOpponent" class="field" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex.: 98750" value="${second}">
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Anulează</button>
+      <button class="btn" onclick="saveMatchScore('${match.id}')">Salvează punctajul</button>
+    </div>
+  `);
+}
+
+function saveMatchScore(id){
+  const match=state.matches.find(m=>m.id===id);
+  if(!match)return;
+  const first=document.getElementById("matchScoreCreator")?.value.trim();
+  const second=document.getElementById("matchScoreOpponent")?.value.trim();
+  if(first===""||second===""){
+    notify("Completează punctajul ambilor creatori.");
+    return;
+  }
+  const score1=Number(first), score2=Number(second);
+  if(!Number.isSafeInteger(score1)||!Number.isSafeInteger(score2)||score1<0||score2<0){
+    notify("Punctajele trebuie să fie numere întregi pozitive.");
+    return;
+  }
+  match.scoreCreator=score1;
+  match.scoreOpponent=score2;
+  match.status="Finalizat";
+  match.resultSavedAt=new Date().toISOString();
+  saveState();
+  closeModal();
+  renderMatches();
+  notify("Punctajul meciului a fost salvat.");
+}
+
+function formatMatchDate(value){
+  if(!value)return "Nespecificată";
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return String(value);
+  return d.toLocaleString("ro-RO",{dateStyle:"short",timeStyle:"short"});
+}
+function formatMatchPoints(value){
+  if(value===null||value===undefined||value==="")return "—";
+  return Number(value).toLocaleString("ro-RO");
+}
+
 function renderMatches(){
   const module=document.getElementById("module-matches");
   if(!module)return;
-
   let section=document.getElementById("matchList");
-
   if(!section){
     section=document.createElement("div");
     section.id="matchList";
     section.className="section";
-    module.querySelector(".section").appendChild(section);
+    module.querySelector(".section")?.appendChild(section);
   }
+  if(!section)return;
 
   section.innerHTML=`
     <div class="section-head">
       <div class="section-title">Meciuri programate</div>
       <button class="btn" onclick="openMatchModal()">+ Adaugă Match</button>
     </div>
-
-    ${
-      state.matches.length
-      ?`
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>CREATOR</th>
-                <th>ADVERSAR</th>
-                <th>DATA</th>
-                <th>STATUS</th>
-                <th>LINK</th>
-                <th>ACȚIUNI</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${state.matches.map(m=>`
-                <tr>
-                  <td>${escapeHTML(m.creatorName)}</td>
-                  <td>${escapeHTML(m.opponent)}</td>
-                  <td>${escapeHTML(m.date||"Nespecificată")}</td>
-                  <td><span class="tag">${escapeHTML(m.status)}</span></td>
-                  <td>${
-                    m.link
-                    ?`<a href="${escapeHTML(m.link)}" target="_blank" style="color:var(--purple2)">Deschide</a>`
-                    :"—"
-                  }</td>
-                  <td>
-                    <button class="btn secondary"
-                      onclick="completeMatch('${m.id}')">Finalizat</button>
-                    <button class="btn danger"
-                      onclick="deleteMatch('${m.id}')">Șterge</button>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      `
-      :'<div class="empty">Nu există meciuri programate.</div>'
-    }
+    ${state.matches.length?`
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>CREATOR</th><th>ADVERSAR</th><th>DATA ȘI ORA</th>
+            <th>PUNCTAJ MATCH</th><th>STATUS</th><th>LINK</th><th>ACȚIUNI</th>
+          </tr></thead>
+          <tbody>
+            ${state.matches.map(m=>{
+              const hasScore=m.scoreCreator!==null&&m.scoreCreator!==undefined&&m.scoreOpponent!==null&&m.scoreOpponent!==undefined;
+              return `<tr>
+                <td>${escapeHTML(m.creatorName||"")}</td>
+                <td>${escapeHTML(m.opponent||"")}</td>
+                <td>${escapeHTML(formatMatchDate(m.date))}</td>
+                <td><strong>${hasScore?escapeHTML(formatMatchPoints(m.scoreCreator)+" – "+formatMatchPoints(m.scoreOpponent)):"Nesetat"}</strong></td>
+                <td><span class="tag">${escapeHTML(m.status||"Planificat")}</span></td>
+                <td>${m.link?`<a href="${escapeHTML(m.link)}" target="_blank" rel="noopener noreferrer" style="color:var(--purple2)">Deschide</a>`:"—"}</td>
+                <td style="white-space:nowrap">
+                  <button class="btn secondary" onclick="openMatchScoreModal('${m.id}')">${hasScore?"Editează punctaj":"Adaugă punctaj"}</button>
+                  <button class="btn danger" onclick="deleteMatch('${m.id}')">Șterge</button>
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `:'<div class="empty">Nu există meciuri programate.</div>'}
   `;
 }
 
 function completeMatch(id){
   const match=state.matches.find(m=>m.id===id);
   if(!match)return;
-
-  match.status="Finalizat";
-  saveState();
-  renderMatches();
+  openMatchScoreModal(id);
 }
 
 function deleteMatch(id){
-  if(!confirm("Ștergi acest Match?"))return;
-
+  const match=state.matches.find(m=>m.id===id);
+  if(!match)return;
+  if(!confirm("Ștergi definitiv acest meci și punctajul lui?"))return;
   state.matches=state.matches.filter(m=>m.id!==id);
   saveState();
   renderMatches();
+  notify("Meciul a fost șters.");
 }
 
 
@@ -2806,28 +2867,13 @@ async function vortyxDeleteAllRecruitment(){
   if(!["admin","administrator","owner"].includes(role)){
     notify("Doar administratorul poate șterge integral lista."); return;
   }
-  if(!window.vortyxSupabase || !vortyxSession){
-    notify("Nu există o sesiune Supabase activă. Nu am șters nimic."); return;
-  }
-  if(!confirm("CONFIRMARE FINALĂ: Se vor șterge TOȚI creatorii din lista VORTYX Recruitment, contactați și necontactați, inclusiv din Supabase. Lista Creators/Backstage și istoricul creatorilor din agenție NU vor fi afectate. După ștergere poți importa o listă nouă. Continui?")) return;
+  if(!confirm("ATENȚIE! Se vor șterge toți creatorii din lista Recruitment comună. Lista Creators/Backstage nu va fi afectată. Continui?")) return;
   try{
-    // Ștergere directă din tabel: nu depinde de o funcție RPC separată.
-    const {data,error}=await window.vortyxSupabase
-      .from(VORTYX_SUPABASE_CONFIG.recruitmentTable)
-      .delete()
-      .not("id","is",null)
-      .select("id");
+    const {data,error}=await window.vortyxSupabase.rpc("vortyx_delete_all_recruitment");
     if(error) throw error;
-    const deletedCount=Array.isArray(data)?data.length:0;
-    // Golim numai modulul Recruitment după confirmarea răspunsului Supabase.
-    state.recruitment=[];
-    saveState();
-    renderRecruitment();
-    notify("Lista VORTYX Recruitment a fost golită. Înregistrări șterse din Supabase: "+deletedCount+". Poți importa lista nouă.");
-  }catch(e){
-    console.error("Ștergere integrală Recruitment:",e);
-    notify("Nu s-a putut șterge lista din Supabase: "+(e?.message||String(e))+". Verifică permisiunea DELETE (RLS) pentru recruitment_leads.");
-  }
+    state.recruitment=[]; saveState(); renderRecruitment();
+    notify("Lista Recruitment a fost ștearsă integral ("+Number(data||0)+" creatori).");
+  }catch(e){console.error(e);notify("Nu s-a putut șterge lista: "+e.message);}
 }
 
 
@@ -3002,7 +3048,7 @@ function renderRecruitment() {
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="openRecruitmentModal()">+ Lead nou</button>
         <button class="btn danger" data-admin-only onclick="vortyxDeleteContactedRecruitment()">ȘTERGE CONTACTAȚII</button>
-        <button class="btn danger" data-admin-only onclick="vortyxDeleteAllRecruitment()">ȘTERGE TOATĂ LISTA (IMPORT NOU)</button>
+        <button class="btn danger" data-admin-only onclick="vortyxDeleteAllRecruitment()">ȘTERGE TOATĂ LISTA</button>
       </div>
     </div>
 
